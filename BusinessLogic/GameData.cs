@@ -13,8 +13,6 @@ public class GameData
 
     public string[] Positions { get; } = {"Midfielder", "Goalkeeper", "Defender", "Forward" };
     
-    private EventHandler<GameUpdatedEventArgs>? Updated;
-
     public GameData(List<Player> players, List<Team> teams, string fileName)
     {
         Players = players;
@@ -30,20 +28,6 @@ public class GameData
         CreateTeams();
     }
 
-    public void OnGameUpdated(GameUpdatedEventArgs e)
-    {
-        var temp = Updated;
-        temp?.Invoke(this, e);
-    }
-    public void AttachObserver(EventHandler<GameUpdatedEventArgs> observer)
-    {
-        Updated += observer;
-    }
-    public void DetachObserver(EventHandler<GameUpdatedEventArgs> observer)
-    {
-        Updated -= observer;
-    }
-    
     public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)

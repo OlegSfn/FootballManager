@@ -156,26 +156,24 @@ public static class RouteManager
 
     private static void ChangePlayerStats(Player playerToChange)
     {
+        
         MenuButton[] playerStatsButtons = new MenuButton[playerToChange.Stats.Count];
         for (int i = 0; i < playerToChange.Stats.Count; i++)
-        {
             playerStatsButtons[i] = new ActionButton<int>(playerToChange.Stats[i].ToString(), index => playerToChange.Stats.RemoveAt(index), i);
-        }
-
-        var playerStatsMenu = new Menu(playerStatsButtons);
-        playerStatsMenu.Show();
-        playerStatsMenu.ShowSelected = false;
-        
         string[] statsActionsText = { "Добавить красную карточку", "Добавить жёлтую карточку", "Добавить гол", "Добавить голевую передачу", "Удалить статистику" };
         var statsButton = new SwapButton("Выберите действие со статистикой", statsActionsText);
-        var statsMenu = new Menu(new MenuButton[]{statsButton});
-        statsMenu.HandleUsing();
 
+        ButtonsGroup playerStatsGroup = new ButtonsGroup(){MenuButtons = playerStatsButtons};
+        ButtonsGroup playerChangeStatsGroup = new ButtonsGroup(){MenuButtons = new MenuButton[]{statsButton}};
+        var playerStatsMenu = new Menu(new[]{playerStatsGroup, playerChangeStatsGroup });
+        playerStatsGroup.IsActive = false;
+        playerStatsMenu.HandleUsing();
+        
         switch (statsButton.CurVariant)
         {
             case "Удалить статистику":
-                playerStatsMenu.ShowSelected = true;
-                statsMenu.ShowSelected = false;
+                playerStatsGroup.IsActive = true;
+                playerChangeStatsGroup.IsActive = false;
                 playerStatsMenu.HandleUsing();
                 break;
             case "Добавить красную карточку":

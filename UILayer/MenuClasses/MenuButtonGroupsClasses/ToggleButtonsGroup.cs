@@ -2,7 +2,7 @@ using UILayer.MenuClasses.MenuButtonsClasses;
 
 namespace UILayer.MenuClasses.MenuButtonGroupsClasses;
 
-public class ToggleButtonsGroup
+public class ToggleButtonsGroup : ButtonsGroup
 {
     public HashSet<ToggleButton> SelectedToggleButtons { get; } = new();
 
