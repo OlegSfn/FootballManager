@@ -14,28 +14,32 @@ public class Team
         Name = name;
         Players = players;
     }
-    
+
     public void OnTeamUpdated(TeamUpdatedEventArgs e)
     {
-        throw new NotImplementedException();
+        var temp = Updated;
+        temp?.Invoke(this, e);
     }
     public void AttachObserver(EventHandler<TeamUpdatedEventArgs> observer)
     {
-        throw new NotImplementedException();
+        Updated += observer;
     }
     public void DetachObserver(EventHandler<TeamUpdatedEventArgs> observer)
     {
-        throw new NotImplementedException();
+        Updated -= observer;
     }
     public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
-        throw new NotImplementedException();
+        foreach (var player in Players)
+            player.AttachObserver(observer);
     }
     public void DetachObserverFromAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
-        throw new NotImplementedException();
+        foreach (var player in Players)
+            player.DetachObserver(observer);
     }
-    public void PlayerChangedHandler()    
+    
+    public void PlayerChangedHandler(object? sender, PlayerUpdatedEventArgs e)
     {
         throw new NotImplementedException();
     }

@@ -5,7 +5,9 @@ public class Menu
     private MenuButton[] _buttons;
     private int _cursorPosition;
     private string _header;
+    public bool ShowSelected { get; set; } = true;
 
+    //TODO: Force user to choose at least one of the radiobutton.
     public Menu(string header, MenuButton[] buttons)
     {
         _header = header;
@@ -34,7 +36,7 @@ public class Menu
         }
     }
 
-    private void Show()
+    public void Show()
     {
         Console.Clear();
         if (_header != string.Empty)
@@ -42,7 +44,7 @@ public class Menu
         
         for (int i = 0; i < _buttons.Length; i++)
         {
-            if (i == _cursorPosition)
+            if (i == _cursorPosition && ShowSelected)
             {
                 Console.BackgroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine(_buttons[i]);

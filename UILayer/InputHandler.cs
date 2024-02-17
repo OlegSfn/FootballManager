@@ -20,6 +20,21 @@ public class InputHandler
                 return userInp;
         }
     }
+
+    //TODO: Check null.
+    public static int GetIntValue(string msg, string newMsg)
+    {
+        while (true)
+        {
+            Console.Write(msg);
+            string userInp = Console.ReadLine();
+            if (int.TryParse(userInp, out int result))
+                return result;
+
+            Printer.PrintError("Вы ввели не целое число.");
+            msg = newMsg;
+        }
+    }
     
     /// <summary>
     /// Asks the user a yes/no question.
