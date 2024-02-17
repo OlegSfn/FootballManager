@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace BusinessLogic;
@@ -31,8 +32,25 @@ public class Stat
         return $"{Id} | {Type}";
     }
 
-    private string GenerateId()
+    private static string GenerateId()
     {
-        return "123";
+        const string alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
+        var res = new StringBuilder();
+        var rnd = new Random(DateTime.Now.Millisecond);
+        for (int i = 0; i < 8; i++)
+            res.Append(alphabet[rnd.Next(alphabet.Length)]);
+
+        res.Append('-');
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 4; j++)
+                res.Append(alphabet[rnd.Next(alphabet.Length)]);
+            res.Append('-');
+        }
+        
+        for (int i = 0; i < 12; i++)
+            res.Append(alphabet[rnd.Next(alphabet.Length)]);
+        
+        return res.ToString();
     }
 }

@@ -6,13 +6,25 @@ public class Team
 {
     public List<Player> Players { get; set; }
     public string Name { get; set; }
-    public int CardsCount { get; set; }
+
+    private int _cardsCount;
+    public int CardsCount
+    {
+        get => _cardsCount;
+        set
+        {
+            _cardsCount = value;
+            OnTeamUpdated(new TeamUpdatedEventArgs(DateTime.Now, this, _cardsCount));
+        }
+    }
+
     private EventHandler<TeamUpdatedEventArgs>? Updated;
     
     public Team(string name, List<Player> players)
     {
         Name = name;
         Players = players;
+        CardsCount = GetBadCardsCount();
     }
 
     public void OnTeamUpdated(TeamUpdatedEventArgs e)
@@ -41,7 +53,7 @@ public class Team
     
     public void PlayerChangedHandler(object? sender, PlayerUpdatedEventArgs e)
     {
-        throw new NotImplementedException();
+        CardsCount = GetBadCardsCount();
     }
 
     private int GetBadCardsCount()

@@ -22,14 +22,18 @@ public class InputHandler
     }
 
     //TODO: Check null.
-    public static int GetIntValue(string msg, string newMsg)
+    public static bool GetIntValue(string msg, string newMsg, out int result)
     {
+        result = -1;
         while (true)
         {
             Console.Write(msg);
             string userInp = Console.ReadLine();
-            if (int.TryParse(userInp, out int result))
-                return result;
+            if (userInp == null)
+                return false;
+            
+            if (int.TryParse(userInp, out result))
+                return true;
 
             Printer.PrintError("Вы ввели не целое число.");
             msg = newMsg;

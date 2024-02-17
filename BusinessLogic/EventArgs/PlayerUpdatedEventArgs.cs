@@ -3,12 +3,9 @@ namespace BusinessLogic.EventArgs;
 public class PlayerUpdatedEventArgs : System.EventArgs
 {
     public DateTime UpdateTime { get;}
-    public List<Stat> Stats { get; }
     
-    
-    public PlayerUpdatedEventArgs(DateTime updateTime, List<Stat> stats)
+    public PlayerUpdatedEventArgs(DateTime updateTime)
     {
         UpdateTime = updateTime;
-        Stats = stats;
     }
 }

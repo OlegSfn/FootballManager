@@ -29,7 +29,9 @@ public class Menu
     public Menu(MenuButton[] buttons) : this(string.Empty, buttons){ }
     public Menu(ButtonsGroup[] groups) : this(string.Empty, groups){ }
 
-    public void HandleUsing()
+    public Menu(MenuButton button) : this(string.Empty, new [] { button }) { }
+
+    public bool HandleUsing()
     {
         if (SelectedGroup.IsActive == false)
         {
@@ -54,10 +56,12 @@ public class Menu
                 MoveCursorDown();
             else if (pressedKey == ConsoleKey.UpArrow)
                 MoveCursorUp();
+            else if (pressedKey == ConsoleKey.Escape)
+                return false;
             else if (pressedKey == ConsoleKey.Enter)
             {
                 PushSelectedButton(pressedKey);
-                return;
+                return true;
             }
             else
                 PushSelectedButton(pressedKey);

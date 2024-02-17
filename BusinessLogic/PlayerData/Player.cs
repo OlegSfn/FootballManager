@@ -44,6 +44,7 @@ public class Player
         set => _teamNameName = value;
     }
     
+    [JsonIgnore]
     public Team Team { get; set; }
 
     private List<Stat> _stats;

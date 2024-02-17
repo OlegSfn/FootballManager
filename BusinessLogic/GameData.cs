@@ -13,6 +13,8 @@ public class GameData
 
     public string[] Positions { get; } = {"Midfielder", "Goalkeeper", "Defender", "Forward" };
     
+    private EventHandler<GameUpdatedEventArgs>? Updated;
+
     public GameData(List<Player> players, List<Team> teams, string fileName)
     {
         Players = players;
@@ -28,6 +30,22 @@ public class GameData
         CreateTeams();
     }
 
+    public override string ToString() => FileName;
+    
+    public void OnGameUpdated(GameUpdatedEventArgs e)
+    {
+        var temp = Updated;
+        temp?.Invoke(this, e);
+    }
+    public void AttachObserver(EventHandler<GameUpdatedEventArgs> observer)
+    {
+        Updated += observer;
+    }
+    public void DetachObserver(EventHandler<GameUpdatedEventArgs> observer)
+    {
+        Updated -= observer;
+    }
+    
     public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)
@@ -105,6 +123,7 @@ public class GameData
     
     private void TeamChangedHandler(object? sender, TeamUpdatedEventArgs e)
     {
-        throw new NotImplementedException();
+        if (e.NewCardsCount > 7)
+            OnGameUpdated(new GameUpdatedEventArgs(DateTime.Now, $"Team {e.Team.Name} was disqualified."));
     }
 }
