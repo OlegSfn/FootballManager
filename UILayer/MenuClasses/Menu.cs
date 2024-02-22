@@ -56,7 +56,7 @@ public class Menu
                 MoveCursorDown();
             else if (pressedKey == ConsoleKey.UpArrow)
                 MoveCursorUp();
-            else if (pressedKey == ConsoleKey.Escape)
+            else if (pressedKey == ConsoleKey.Tab)
                 return false;
             else if (pressedKey == ConsoleKey.Enter)
             {

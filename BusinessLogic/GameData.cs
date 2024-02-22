@@ -63,7 +63,8 @@ public class GameData
         for (int i = 0; i < Players.Count; i++)
         {
             var curPlayer = Players[i];
-            sortedPlayers[i] = new Player(curPlayer.Id, curPlayer.Name, curPlayer.Position, curPlayer.JerseyNumber, curPlayer.TeamName, new List<Stat>(curPlayer.Stats));
+            sortedPlayers[i] = new Player(curPlayer.Id, curPlayer.Name, curPlayer.Position, curPlayer.JerseyNumber, 
+                curPlayer.TeamName, new List<Stat>(curPlayer.Stats != null ? curPlayer.Stats : new List<Stat>()));
         }
         
         var mult = isReversed ? -1 : 1;

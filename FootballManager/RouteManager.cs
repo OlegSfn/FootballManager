@@ -11,6 +11,11 @@ namespace FootballManager;
 
 public static class RouteManager
 {
+    public static void HandleFirstUsing()
+    {
+        
+    }
+    
     public static void EnterMainMenu()
     {
         var enterNewDataButton = new ActionButton("Ввести данные о новой игре из файла", EnterNewData);
@@ -20,7 +25,7 @@ public static class RouteManager
         {
             var changeCurrentGameButton = new SwapButton<GameData>("Текущая игра", Storage.GameDatas.ToArray(), ChangeCurrentGame);
             var sortPlayersButton = new ActionButton("Отсортировать игроков", SortPlayers);
-            var changePlayerDataButton = new ActionButton("Изменить данные об игроке", ChangePlayerData);
+            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChangePlayerData, Storage.CurrentGame);
             menuButtons.AddRange(new MenuButton[]{changeCurrentGameButton, sortPlayersButton, changePlayerDataButton});
         }
         
@@ -39,6 +44,7 @@ public static class RouteManager
             return;
 
         List<Player> players = new List<Player>();
+        //TODO: make another check on array.
         try
         {
             players = JsonSerializer.Deserialize<List<Player>>(File.ReadAllText(filePath));
@@ -87,15 +93,17 @@ public static class RouteManager
 
         bool isReversed = sortModeButton.CurVariant == "По убыванию";
         Player[] sortedPlayers = Storage.CurrentGame.SortPlayers(sortTypeButton.CurVariant, isReversed);
-        GameData.SaveToFile("test.json", sortedPlayers.ToList());
+        GameData newGameData = new GameData(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
+        Storage.GameDatas.Add(newGameData);
+        ChangePlayerData(newGameData);
     }
 
-    private static void ChangePlayerData()
+    private static void ChangePlayerData(GameData gameData)
     {
         while (true)
         {
             Player chosenPlayer = null!;
-            MenuButton[] playerButtons = Storage.CurrentGame.Players.Select(
+            MenuButton[] playerButtons = gameData.Players.Select(
                     x => 
                         new ActionButton<Player>($"{x.Id} | {x.Name} | {x.TeamName} | {x.JerseyNumber}", player => chosenPlayer = player, x))
                 .ToArray();
@@ -220,7 +228,7 @@ public static class RouteManager
     
     private static void Settings()
     {
-        throw new NotImplementedException();
+        
     }
 
     private static void Help()
