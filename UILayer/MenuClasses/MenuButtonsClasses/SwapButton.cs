@@ -1,3 +1,5 @@
+using UILayer.MenuClasses.MenuButtonsClasses;
+
 namespace UILayer.MenuClasses;
 
 public class SwapButton<T> : MenuButton
@@ -8,17 +10,17 @@ public class SwapButton<T> : MenuButton
     
     private bool _isCycled;
 
-    private Action<T> _action;
+    private Action<T> _swapAction;
+    private Action<T> _confirmAction;
 
-    public SwapButton(string text, T[] swapVariants, Action<T> action, bool isCycled = false)
+    public SwapButton(string text, T[] swapVariants, Action<T>? swapAction = null, Action<T>? confirmAction = null, bool isCycled = false)
     {
         Text = text;
         SwapVariants = swapVariants;
-        _action = action;
+        _swapAction = swapAction ?? (_ => {});
+        _confirmAction = confirmAction ?? (_ => {});
         _isCycled = isCycled;
     }
-
-    public SwapButton(string text, T[] swapVariants, bool isCycled = false) : this(text, swapVariants, _ => { }, isCycled:isCycled) { }
 
     public override void RegisterAction(ConsoleKey key)
     {
@@ -28,7 +30,7 @@ public class SwapButton<T> : MenuButton
                 _curVariantIndex = (_curVariantIndex - 1 + SwapVariants.Length) % SwapVariants.Length;
             else
                 _curVariantIndex = Math.Clamp(_curVariantIndex - 1, 0, SwapVariants.Length);
-            _action?.Invoke(CurVariant);
+            _swapAction?.Invoke(CurVariant);
         }
         else if (key == ConsoleKey.RightArrow)
         {
@@ -36,8 +38,10 @@ public class SwapButton<T> : MenuButton
                 _curVariantIndex = (_curVariantIndex + 1) % SwapVariants.Length;
             else
                 _curVariantIndex = Math.Clamp(_curVariantIndex + 1, 0, SwapVariants.Length-1);
-            _action?.Invoke(CurVariant);
+            _swapAction?.Invoke(CurVariant);
         }
+        else if (key == ConsoleKey.Enter)
+            _confirmAction.Invoke(CurVariant);
     }
 
     public override string ToString()

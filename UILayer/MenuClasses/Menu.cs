@@ -1,4 +1,5 @@
 using UILayer.MenuClasses.MenuButtonGroupsClasses;
+using UILayer.MenuClasses.MenuButtonsClasses;
 
 namespace UILayer.MenuClasses;
 
@@ -40,12 +41,13 @@ public class Menu
                 if (_groups[i].IsActive)
                 {
                     _groupIndex = i;
+                    //TODO: find visible menu point and place cursor on it;
                     break;
                 }
             }
             
             if (SelectedGroup.IsActive == false)
-                throw new Exception("Every group is inactive");
+                throw new Exception("All groups are inactive");
         }
         
         while (true)
@@ -76,9 +78,11 @@ public class Menu
         
         foreach (var group in _groups)
         {
-            MenuButton[] groupButtons = group.MenuButtons;
+            var groupButtons = group.MenuButtons;
             for (int j = 0; j < groupButtons.Length; j++)
             {
+                if (!group.IsVisible || !groupButtons[j].IsActive) continue;
+                
                 if (group == SelectedGroup && j == group.CursorPosition && ShowSelected)
                 {
                     Console.BackgroundColor = ConsoleColor.DarkGray;
@@ -114,7 +118,7 @@ public class Menu
 
     private int FindNewGroupIndex(int delta)
     {
-        int newGroupIndex = _groupIndex+delta;
+        var newGroupIndex = _groupIndex+delta;
         while (newGroupIndex < _groups.Length && newGroupIndex >= 0)
         {
             if (_groups[newGroupIndex].IsActive)

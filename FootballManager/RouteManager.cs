@@ -23,9 +23,9 @@ public static class RouteManager
 
         if (Storage.GameDatas.Count > 0)
         {
-            var changeCurrentGameButton = new SwapButton<GameData>("Текущая игра", Storage.GameDatas.ToArray(), ChangeCurrentGame);
+            var changeCurrentGameButton = new SwapButton<GameData>("Текущая игра", Storage.GameDatas.ToArray(), swapAction:ChangeCurrentGame);
             var sortPlayersButton = new ActionButton("Отсортировать игроков", SortPlayers);
-            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChangePlayerData, Storage.CurrentGame);
+            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChosePlayerToChangePlayerData, Storage.CurrentGame);
             menuButtons.AddRange(new MenuButton[]{changeCurrentGameButton, sortPlayersButton, changePlayerDataButton});
         }
         
@@ -67,9 +67,7 @@ public static class RouteManager
             var gameData = new GameData(players, Path.GetFileName(filePath));
             Storage.GameDatas.Add(gameData);
             Storage.CurrentGame = gameData;
-            AutoSaver autoSaver = new AutoSaver();
-            gameData.AttachObserverToAll(autoSaver.PlayerChangedHandler);
-            gameData.AttachObserver(GameChangedHandler);
+            AddNewGame(gameData);
         }
         else
             Console.WriteLine("Не найдены данные об игроках в файле.");
@@ -92,13 +90,14 @@ public static class RouteManager
             return;
 
         bool isReversed = sortModeButton.CurVariant == "По убыванию";
-        Player[] sortedPlayers = Storage.CurrentGame.SortPlayers(sortTypeButton.CurVariant, isReversed);
-        GameData newGameData = new GameData(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
+        var sortedPlayers = Storage.CurrentGame.SortPlayers(sortTypeButton.CurVariant, isReversed);
+        var newGameData = new GameData(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
         Storage.GameDatas.Add(newGameData);
-        ChangePlayerData(newGameData);
+        AddNewGame(newGameData);
+        ChosePlayerToChangePlayerData(newGameData);
     }
 
-    private static void ChangePlayerData(GameData gameData)
+    private static void ChosePlayerToChangePlayerData(GameData gameData)
     {
         while (true)
         {
@@ -111,42 +110,79 @@ public static class RouteManager
 
             if (!playersMenu.HandleUsing())
                 return;
+            
+            ChangePlayerData(chosenPlayer);
+        }
+    }
 
-            while (true)
-            {
-                var changeNameButton = new ActionButton("Имя", () => ChangePlayerName(chosenPlayer));
-                var changePositionButton = new ActionButton("Позиция", () => ChangePlayerPosition(chosenPlayer));
-                var changeJerseyNumButton = new ActionButton("Игровой номер", () => ChangePlayerJerseyNumber(chosenPlayer));
-                var changeTeamButton = new ActionButton("Команда", () => ChangePlayerTeam(chosenPlayer));
-                var changeStatsButton = new ActionButton("Статистика", () => ChangePlayerStats(chosenPlayer));
-                MenuButton[] changePlayerButtons =
-                    { changeNameButton, changePositionButton, changeJerseyNumButton, changeTeamButton, changeStatsButton };
-                var changeFieldMenu = new Menu($"Выберите параметр, который нужно изменить у {chosenPlayer.Name}:",
-                    changePlayerButtons);
-
-                if (!changeFieldMenu.HandleUsing())
-                    break;
-            }
+    private static void ChangePlayerData(Player chosenPlayer)
+    {
+        ButtonsGroup changePlayerVariableButtonsGroup = new()
+        {
+            MenuButtons = new MenuButton[] {new ActionButton(""){IsActive = false}}, //TODO: check error on empty.
+            IsActive = false
+        };
+        ButtonsGroup changePlayerButtonsGroup = new();
+        void SwitchGroup(bool isBaseGroupActive)
+        {
+            changePlayerVariableButtonsGroup.IsActive = !isBaseGroupActive;
+            changePlayerVariableButtonsGroup.IsVisible = !isBaseGroupActive;
+            changePlayerButtonsGroup.IsActive = isBaseGroupActive;
+        }    
+        
+        
+        var changeNameButton = new ActionButton("Имя", () => ChangePlayerName(chosenPlayer));
+        var changePositionButton = new ActionButton("Позиция", () =>
+        {
+            var positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions,
+                confirmAction:(newPosition) =>
+                {
+                    ChangePlayerPosition(chosenPlayer, newPosition);
+                    SwitchGroup(true);
+                });
+            changePlayerVariableButtonsGroup.MenuButtons[0] = positionsButton;
+            SwitchGroup(false);
+        });
+        var changeJerseyNumButton = new ActionButton("Игровой номер", () => ChangePlayerJerseyNumber(chosenPlayer));
+        var changeTeamButton = new ActionButton("Команда", () =>
+        {
+            string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
+            var teamsButton = new SwapButton<string>("Новая команда", teamsNames, 
+                confirmAction:(newTeam) =>
+                {
+                    ChangePlayerTeam(chosenPlayer, newTeam);
+                    SwitchGroup(true);
+                });
+            changePlayerVariableButtonsGroup.MenuButtons[0] = teamsButton;
+            SwitchGroup(false);
+        });
+        var changeStatsButton = new ActionButton("Статистика", () => ChangePlayerStats(chosenPlayer));
+        MenuButton[] changePlayerButtons =
+            { changeNameButton, changePositionButton, changeJerseyNumButton, changeTeamButton, changeStatsButton };
+            
+        changePlayerButtonsGroup.MenuButtons = changePlayerButtons;
+            
+        while (true)
+        {
+            var changeFieldMenu = new Menu($"Выберите параметр, который нужно изменить у {chosenPlayer.Name}:",
+                new []{changePlayerButtonsGroup, changePlayerVariableButtonsGroup});
+            if (!changeFieldMenu.HandleUsing())
+                break;
         }
     }
 
     private static void ChangePlayerName(Player playerToChange)
     {
         Console.Write("Введите новое имя: ");
-        string? newName = Console.ReadLine();
+        var newName = Console.ReadLine();
         if (newName == null)
             return;
         playerToChange.Name = newName;
     }
 
-    private static void ChangePlayerPosition(Player playerToChange)
+    private static void ChangePlayerPosition(Player playerToChange, string newPosition)
     {
-        SwapButton<string> positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions);
-        Menu changePositionMenu = new Menu(new MenuButton[] {positionsButton});
-        if (!changePositionMenu.HandleUsing())
-            return;
-
-        playerToChange.Position = positionsButton.CurVariant;
+        playerToChange.Position = newPosition;
     }
     
     private static void ChangePlayerJerseyNumber(Player playerToChange)
@@ -156,16 +192,8 @@ public static class RouteManager
             playerToChange.JerseyNumber = newJerseyNumber;
     }
 
-    //TODO: Check null
-    private static void ChangePlayerTeam(Player playerToChange)
+    private static void ChangePlayerTeam(Player playerToChange, string newTeamName)
     {
-        string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
-        var teamsButton = new SwapButton<string>("Новая команда", teamsNames);
-        var changeTeamMenu = new Menu(new MenuButton[] { teamsButton });
-        if (!changeTeamMenu.HandleUsing())
-            return;
-
-        string? newTeamName = teamsButton.CurVariant;
         if (newTeamName == "Создать новую команду")
         {
             Console.Write("Введите название для новой команды: ");
@@ -186,18 +214,17 @@ public static class RouteManager
 
     private static void ChangePlayerStats(Player playerToChange)
     {
+        string[] statsActionsText = { "Добавить красную карточку", "Добавить жёлтую карточку", "Добавить гол", "Добавить голевую передачу", "Удалить статистику" };
+        var statsButton = new SwapButton<string>("Выберите действие со статистикой", statsActionsText);
+        var playerChangeStatsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{statsButton}};
         while (true)
         {
             MenuButton[] playerStatsButtons = new MenuButton[playerToChange.Stats.Count];
             for (int i = 0; i < playerToChange.Stats.Count; i++)
                 playerStatsButtons[i] = new ActionButton<int>(playerToChange.Stats[i].ToString(), index => playerToChange.Stats.RemoveAt(index), i);
-            string[] statsActionsText = { "Добавить красную карточку", "Добавить жёлтую карточку", "Добавить гол", "Добавить голевую передачу", "Удалить статистику" };
-            var statsButton = new SwapButton<string>("Выберите действие со статистикой", statsActionsText);
 
-            var playerStatsGroup = new ButtonsGroup{MenuButtons = playerStatsButtons};
-            var playerChangeStatsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{statsButton}};
+            var playerStatsGroup = new ButtonsGroup{MenuButtons = playerStatsButtons, IsActive = false};
             var playerStatsMenu = new Menu(new[]{playerStatsGroup, playerChangeStatsGroup });
-            playerStatsGroup.IsActive = false;
             if (!playerStatsMenu.HandleUsing())
                 return;
         
@@ -228,7 +255,7 @@ public static class RouteManager
     
     private static void Settings()
     {
-        
+        throw new NotImplementedException();
     }
 
     private static void Help()
@@ -240,5 +267,12 @@ public static class RouteManager
     {
         Printer.PrintInfo(e.Message);
         InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+    }
+
+    private static void AddNewGame(GameData newGameData)
+    {
+        var autoSaver = new AutoSaver();
+        newGameData.AttachObserverToAll(autoSaver.PlayerChangedHandler);
+        newGameData.AttachObserver(GameChangedHandler);
     }
 }
