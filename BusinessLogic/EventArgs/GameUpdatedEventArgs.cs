@@ -5,12 +5,12 @@
 /// </summary>
 public class GameUpdatedEventArgs : System.EventArgs
 {
-    public DateTime UpdateTime { get; }
     public string Message { get; }
     
-    public GameUpdatedEventArgs(DateTime updateTime, string message)
+    public GameUpdatedEventArgs(string message)
     {
-        UpdateTime = updateTime;
         Message = message;
     }
+    
+    public GameUpdatedEventArgs() : this("") { }
 }

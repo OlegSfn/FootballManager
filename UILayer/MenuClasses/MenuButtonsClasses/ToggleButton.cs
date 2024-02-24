@@ -6,7 +6,7 @@ using MenuButtonGroupsClasses;
 /// </summary>
 public class ToggleButton : MenuButton
 {
-    private ToggleButtonsGroup _toggleButtonGroup;
+    private readonly ToggleButtonsGroup _toggleButtonGroup;
     
     public bool IsSelected { get; private set; }
 
@@ -15,7 +15,9 @@ public class ToggleButton : MenuButton
         Text = text;
         _toggleButtonGroup = toggleButtonGroup;
     }
-    
+
+    public ToggleButton() { }
+
     /// <summary>
     /// Selects or deselects this button in her ToggleButtonsGroup.
     /// </summary>

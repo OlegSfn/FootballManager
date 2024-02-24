@@ -25,6 +25,8 @@ public class Game
         Teams = new List<Team>();
         CreateTeams();
     }
+    
+    public Game() : this(new List<Player>(), "") {}
 
     public override string ToString() => FileName;
     
@@ -89,7 +91,7 @@ public class Game
         {
             var curPlayer = Players[i];
             sortedPlayers[i] = new Player(curPlayer.Id, curPlayer.Name, curPlayer.Position, curPlayer.JerseyNumber, 
-                curPlayer.TeamName, new List<Stat>(curPlayer.Stats != null ? curPlayer.Stats : new List<Stat>()));
+                curPlayer.TeamName, new List<Stat>(curPlayer.Stats));
         }
         
         var mult = isReversed ? -1 : 1;
@@ -116,7 +118,7 @@ public class Game
     /// </summary>
     private void CreateTeams()
     {
-        HashSet<string> teamNames = new HashSet<string>();
+        var teamNames = new HashSet<string>();
         // Find unique teams.
         foreach (var player in Players)
             teamNames.Add(player.TeamName);
@@ -143,7 +145,7 @@ public class Game
     /// <param name="players">The list of players in the team.</param>
     public void CreateNewTeam(string name, List<Player> players)
     {
-        Team team = new Team(name, players);
+        var team = new Team(name, players);
         Teams.Add(team);
         team.AttachObserver(TeamChangedHandler);
     }
@@ -158,6 +160,6 @@ public class Game
     private void TeamChangedHandler(object? sender, TeamUpdatedEventArgs e)
     {
         if (e.NewCardsCount > 7)
-            OnGameUpdated(new GameUpdatedEventArgs(DateTime.Now, $"Team {e.Team.Name} was disqualified."));
+            OnGameUpdated(new GameUpdatedEventArgs($"Team {e.Team.Name} was disqualified."));
     }
 }

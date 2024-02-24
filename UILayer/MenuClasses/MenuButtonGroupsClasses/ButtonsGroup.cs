@@ -7,7 +7,7 @@ namespace UILayer.MenuClasses.MenuButtonGroupsClasses;
 /// </summary>
 public class ButtonsGroup
 {
-    public MenuButton[] MenuButtons { get; set; }
+    public MenuButton[]? MenuButtons { get; set; }
     public int CursorPosition { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsVisible { get; set; } = true;

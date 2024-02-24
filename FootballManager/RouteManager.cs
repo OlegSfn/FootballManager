@@ -4,12 +4,14 @@ using BusinessLogic.EventArgs;
 using BusinessLogic.PlayerData;
 using UILayer.MenuClasses.MenuButtonsClasses;
 using DataLayer;
+using Extensions;
 using UILayer;
 using UILayer.MenuClasses;
 using UILayer.MenuClasses.MenuButtonGroupsClasses;
 using UILayer.TableClasses;
 
 namespace FootballManager;
+
 
 /// <summary>
 /// Manages the routes and navigation within the application.
@@ -64,7 +66,7 @@ public static class RouteManager
 
     private static void EnterNewData()
     {
-        string? filePath = InputHandler.GetFilePathToJson("Введите путь до файла с данными: ");
+        var filePath = InputHandler.GetFilePathToJson("Введите путь до файла с данными: ");
         if (filePath == null)
             return;
         var players = GetPlayersFromFile(filePath);
@@ -78,46 +80,56 @@ public static class RouteManager
 
     private static List<Player>? GetPlayersFromFile(string filePath)
     {
-        var players = new List<Player>();
-
+        List<Player>? players;
         try
         {
-            using var sr = new StreamReader(filePath);
-            char firstLetter;
-            while (char.IsWhiteSpace(firstLetter = (char)sr.Read()))
+            var jsonFile = File.ReadAllText(filePath);
+            char firstLetter = jsonFile.TrimStart()[0];
+            if (jsonFile.Contains("null"))
             {
-            }
-
-            using FileStream fs = File.OpenRead(filePath);
-            if (firstLetter == '[')
-                players = JsonSerializer.Deserialize<List<Player>>(fs);
-            else if (firstLetter == '{')
-                players = new List<Player> { JsonSerializer.Deserialize<Player>(fs)! };
-            else
-            {
-                Printer.PrintError("Json файл должен начинаться с \"[\" или \"{\"");
+                Printer.PrintError("Json файл не должен содержать null полей.");
                 InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
-                return players;
+                return null;
+            }
+            
+            switch (firstLetter)
+            {
+                case '[':
+                    players = JsonSerializer.Deserialize<List<Player>>(jsonFile);
+                    break;
+                case '{':
+                    players = new List<Player> { JsonSerializer.Deserialize<Player>(jsonFile)};
+                    break;
+                default:
+                    Printer.PrintError("Json файл должен начинаться с \"[\" или \"{\"");
+                    InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+                    return null;
             }
         }
         catch (JsonException ex)
         {
             if (ex.InnerException is InvalidOperationException)
             {
-                Printer.PrintError("В файле неверно указан номер игрока.");
+                Printer.PrintError("В файле какое-то из полей имеет недопустимое значение.");
                 InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
-                return players;
+                return null;
             }
-            
+
             Printer.PrintError("Введён неверный json файл.");
             InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
-            return players;
+            return null;
         }
         catch (ArgumentNullException)
         {
             Printer.PrintError("В файле есть некорректные поля или нет данных об игроках.");
             InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
-            return players;
+            return null;
+        }
+        catch (ArgumentException)
+        {
+            Printer.PrintError("У одного из игроков отрицательный номер.");
+            InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+            return null;
         }
 
         return players;
@@ -241,7 +253,7 @@ public static class RouteManager
     private static void ChangePlayerTeam(Player playerToChange, ButtonsGroup playerDataButtonsGroup)
     {
         playerDataButtonsGroup.IsActive = false;
-        string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
+        var teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
         var teamsButton = new SwapButton<string>("Новая команда", teamsNames, 
             startIndex: Storage.CurrentGame.Teams.FindIndex(x => x.Name == playerToChange.TeamName)); 
         var playerTeamButtonsGroup = new ButtonsGroup { MenuButtons = new MenuButton[]{ teamsButton} };
@@ -266,10 +278,12 @@ public static class RouteManager
         }
         
         playerToChange.DetachObserver(playerToChange.Team.PlayerChangedHandler);
+        playerToChange.Team.Players.Remove(playerToChange);
         var newTeam = Storage.CurrentGame.Teams.First(x => x.Name == newTeamName);
         playerToChange.Team = newTeam;
         playerToChange.TeamName = newTeamName;
         playerToChange.AttachObserver(newTeam.PlayerChangedHandler);
+        newTeam.Players.Add(playerToChange);
         playerDataButtonsGroup.IsActive = true;
     }
 
@@ -285,7 +299,7 @@ public static class RouteManager
         
         while (true)
         {
-            MenuButton[] playerStatsButtons = new MenuButton[playerToChange.Stats.Count];
+            var playerStatsButtons = new MenuButton[playerToChange.Stats.Count];
             for (int i = 0; i < playerToChange.Stats.Count; i++)
                 playerStatsButtons[i] = new ActionButton<int>(statsTable.FormatRowItems(new [] {playerToChange.Stats[i].Id, playerToChange.Stats[i].Type}),
                     index =>

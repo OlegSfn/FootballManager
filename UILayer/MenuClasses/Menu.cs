@@ -9,12 +9,12 @@ namespace UILayer.MenuClasses;
 /// </summary>
 public class Menu
 {
-    private ButtonsGroup[] _groups;
+    private readonly ButtonsGroup[] _groups;
     private int _groupIndex;
     private ButtonsGroup SelectedGroup => _groups[_groupIndex];
-    private string _header;
-    private AlignMode _headerAlign;
-    private AlignMode _buttonsAlign;
+    private readonly string _header;
+    private readonly AlignMode _headerAlign;
+    private readonly AlignMode _buttonsAlign;
     public bool ShowSelected { get; set; } = true;
 
     //TODO: Force user to choose at least one of the radiobutton.
@@ -36,6 +36,8 @@ public class Menu
         _headerAlign = headerAlign;
         _buttonsAlign = buttonsAlign;
     }
+    
+    public Menu() {}
 
     /// <summary>
     /// Handles the interaction with the menu.
@@ -46,7 +48,7 @@ public class Menu
     {
         if (!SelectedGroup.IsActive || !SelectedGroup.MenuButtons[SelectedGroup.CursorPosition].IsActive)
         {
-            bool findNewPos = false;
+            var findNewPos = false;
             for (int i = 0; i < _groups.Length; i++)
             {
                 if (!_groups[i].IsActive) continue;
@@ -73,20 +75,24 @@ public class Menu
         while (true)
         {
             Show();
-            ConsoleKey pressedKey = Console.ReadKey().Key;
-            if (pressedKey == ConsoleKey.DownArrow)
-                MoveCursorDown();
-            else if (pressedKey == ConsoleKey.UpArrow)
-                MoveCursorUp();
-            else if (pressedKey == ConsoleKey.Tab)
-                return false;
-            else if (pressedKey == ConsoleKey.Enter)
+            var pressedKey = Console.ReadKey().Key;
+            switch (pressedKey)
             {
-                PushSelectedButton(pressedKey);
-                return true;
+                case ConsoleKey.DownArrow:
+                    MoveCursorDown();
+                    break;
+                case ConsoleKey.UpArrow:
+                    MoveCursorUp();
+                    break;
+                case ConsoleKey.Tab:
+                    return false;
+                case ConsoleKey.Enter:
+                    PushSelectedButton(pressedKey);
+                    return true;
+                default:
+                    PushSelectedButton(pressedKey);
+                    break;
             }
-            else
-                PushSelectedButton(pressedKey);
         }
     }
 
@@ -106,11 +112,11 @@ public class Menu
                 if (group == SelectedGroup && j == group.CursorPosition && ShowSelected)
                 {
                     Console.BackgroundColor = ConsoleColor.DarkGray;
-                    AlignPrint(groupButtons[j].ToString()!, _headerAlign);
+                    AlignPrint(groupButtons[j].ToString()!, _buttonsAlign);
                     Console.ResetColor();
                 }
                 else
-                    AlignPrint(groupButtons[j].ToString()!, _headerAlign);
+                    AlignPrint(groupButtons[j].ToString()!, _buttonsAlign);
             }
         }
     }
@@ -150,13 +156,21 @@ public class Menu
         return _groupIndex;
     }
 
-    private void AlignPrint(string text, AlignMode alignMode)
+    private static void AlignPrint(string text, AlignMode alignMode)
     {
-        if (alignMode == AlignMode.Left)
-            Console.WriteLine(text.AlignLeft(Console.WindowWidth));
-        if (alignMode == AlignMode.Right)
-            Console.WriteLine(text.AlignRight(Console.WindowWidth));
-        if (alignMode == AlignMode.Center) 
-            Console.WriteLine(text.AlignCenter(Console.WindowWidth));
+        switch (alignMode)
+        {
+            case AlignMode.Left:
+                Console.WriteLine(text.AlignLeft(Console.WindowWidth));
+                break;
+            case AlignMode.Right:
+                Console.WriteLine(text.AlignRight(Console.WindowWidth));
+                break;
+            case AlignMode.Center:
+                Console.WriteLine(text.AlignCenter(Console.WindowWidth));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(alignMode), alignMode, null);
+        }
     }
 }

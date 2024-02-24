@@ -53,7 +53,7 @@ public static class InputHandler
         while (true)
         {
             Console.Write(msg);
-            string? filePath = Console.ReadLine();
+            var filePath = Console.ReadLine();
             if (filePath == null)
                 return null;
             

@@ -17,16 +17,12 @@ public class Stat
     [JsonConstructor]
     public Stat(string id, string type)
     {
-        if (id is null)
-            throw new ArgumentNullException(nameof(id));
-        if (type is null)
-            throw new ArgumentNullException(nameof(type));
-        
         Id = id;
         Type = type;
     }
     
     public Stat(string type) : this(GenerateId(), type) { }
+    public Stat() : this("Goals")  { }
     
     /// <summary>
     /// Gets the enumeration type corresponding to the statistical data type.

@@ -11,4 +11,6 @@ public class PlayerUpdatedEventArgs : System.EventArgs
     {
         UpdateTime = updateTime;
     }
+    
+    public PlayerUpdatedEventArgs() : this(DateTime.Now) {}
 }

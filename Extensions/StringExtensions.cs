@@ -47,7 +47,7 @@ public static class StringExtensions
         if (str.Length > maxLen)
             return AlignLeft(str, maxLen);
 
-        int padding = (maxLen - str.Length) / 2;
+        var padding = (maxLen - str.Length) / 2;
         if ((maxLen - str.Length) % 2 == 0)
             return new string(' ', padding) + str + new string(' ', padding);
         

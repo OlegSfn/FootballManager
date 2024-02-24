@@ -14,11 +14,10 @@ public class Team
     private int _cardsCount;
     public int CardsCount
     {
-        get => _cardsCount;
         set
         {
             _cardsCount = value;
-            OnTeamUpdated(new TeamUpdatedEventArgs(DateTime.Now, this, _cardsCount));
+            OnTeamUpdated(new TeamUpdatedEventArgs(this, _cardsCount));
         }
     }
 
@@ -30,6 +29,8 @@ public class Team
         Players = players;
         CardsCount = GetBadCardsCount();
     }
+    
+    public Team() : this("", new List<Player>()) {}
 
     /// <summary>
     /// Raises the TeamUpdated event.

@@ -95,22 +95,10 @@ public class Player
     }
 
     private EventHandler<PlayerUpdatedEventArgs>? Updated;
-    private readonly string _split = new string(' ', 5);
     
     [JsonConstructor]
     public Player(string id, string name, string position, int jerseyNumber, string teamName, List<Stat> stats)
     {
-        if (id is null)
-            throw new ArgumentNullException(nameof(id));
-        if (name is null)
-            throw new ArgumentNullException(nameof(name));
-        if (position is null)
-            throw new ArgumentNullException(nameof(position));
-        if (teamName is null)
-            throw new ArgumentNullException(nameof(teamName));
-        if (stats is null)
-            throw new ArgumentNullException(nameof(stats));
-            
         Id = id;
         Name = name;
         Position = position;
@@ -118,6 +106,8 @@ public class Player
         TeamName = teamName;
         Stats = stats;
     }
+    
+    public Player() : this("", "","", 0, "", new List<Stat>()){}
 
     /// <summary>
     /// Compares the current player with another player based on the specified field name.

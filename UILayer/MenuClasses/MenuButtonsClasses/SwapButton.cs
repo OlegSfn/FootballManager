@@ -24,6 +24,8 @@ public class SwapButton<T> : MenuButton
         _isCycled = isCycled;
         _curVariantIndex = startIndex;
     }
+    
+    public SwapButton(){}
 
     /// <summary>
     /// Invoke ConfirmAction that is associated with this button, when pressed, Invoke SwapAction that is associated with this button, when swapped.

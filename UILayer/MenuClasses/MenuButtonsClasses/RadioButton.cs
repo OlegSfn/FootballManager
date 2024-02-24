@@ -6,7 +6,7 @@ using MenuButtonGroupsClasses;
 /// </summary>
 public class RadioButton : MenuButton
 {
-    private RadioButtonsGroup _radioButtonGroup;
+    private readonly RadioButtonsGroup _radioButtonGroup;
     public bool IsSelected { get; private set; }
 
     public RadioButton(string text, RadioButtonsGroup radioButtonGroup)
@@ -14,6 +14,8 @@ public class RadioButton : MenuButton
         Text = text; 
         _radioButtonGroup = radioButtonGroup;
     }
+    
+    public RadioButton() {}
     
     /// <summary>
     /// Selects this button in her RadioButtonsGroup.

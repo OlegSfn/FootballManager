@@ -7,9 +7,9 @@ namespace UILayer.MenuClasses.MenuButtonsClasses;
 /// </summary>
 public abstract class MenuButton
 {
-    public string Text { get; protected init; }
+    public string Text { get; protected init; } = string.Empty;
     public bool IsActive { get; set; } = true;
-    public ButtonsGroup Group { get; protected set; }
+    public ButtonsGroup? Group { get; protected set; }
     
     /// <summary>
     /// Registers and proceed the action associated with a specified console key.

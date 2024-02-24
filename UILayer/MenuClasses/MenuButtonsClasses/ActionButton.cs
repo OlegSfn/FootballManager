@@ -10,12 +10,12 @@ public class ActionButton : MenuButton
     public ActionButton(string text, Action action)
     {
         Text = text;
-        _action = action;
+        _action = action ?? (() => { });
     }
 
     public ActionButton(string text) : this(text, () => { }) { }
+    public ActionButton() { }
     
-
     /// <summary>
     /// Invoke Action that is associated with this button.
     /// </summary>
@@ -45,12 +45,14 @@ public class ActionButton<T> : MenuButton
     public ActionButton(string text, Action<T> action, T context)
     {
         Text = text;
-        _action = action;
+        _action = action ?? (_ => { });
         _context = context;
     }
 
     public ActionButton(string text, T context) : this(text, _ => { }, context) { }
-    
+
+    public ActionButton() { }
+
     /// <summary>
     /// Invoke Action that is associated with this button.
     /// </summary>
