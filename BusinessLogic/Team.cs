@@ -21,7 +21,7 @@ public class Team
         }
     }
 
-    private EventHandler<TeamUpdatedEventArgs>? Updated;
+    private EventHandler<TeamUpdatedEventArgs>? _teamUpdated;
     
     public Team(string name, List<Player> players)
     {
@@ -31,16 +31,6 @@ public class Team
     }
     
     public Team() : this("", new List<Player>()) {}
-
-    /// <summary>
-    /// Raises the TeamUpdated event.
-    /// </summary>
-    /// <param name="e">The event arguments containing the update information.</param>
-    public void OnTeamUpdated(TeamUpdatedEventArgs e)
-    {
-        var temp = Updated;
-        temp?.Invoke(this, e);
-    }
     
     /// <summary>
     /// Attaches an observer to the TeamUpdated event.
@@ -48,7 +38,7 @@ public class Team
     /// <param name="observer">The event handler to attach.</param>
     public void AttachObserver(EventHandler<TeamUpdatedEventArgs> observer)
     {
-        Updated += observer;
+        _teamUpdated += observer;
     }
     
     /// <summary>
@@ -57,27 +47,7 @@ public class Team
     /// <param name="observer">The event handler to detach.</param>
     public void DetachObserver(EventHandler<TeamUpdatedEventArgs> observer)
     {
-        Updated -= observer;
-    }
-    
-    /// <summary>
-    /// Attaches an observer to the PlayerUpdated event of all players in the team.
-    /// </summary>
-    /// <param name="observer">The event handler to attach.</param>
-    public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
-    {
-        foreach (var player in Players)
-            player.AttachObserver(observer);
-    }
-    
-    /// <summary>
-    /// Detaches an observer from the PlayerUpdated event of all players in the team.
-    /// </summary>
-    /// <param name="observer">The event handler to detach.</param>
-    public void DetachObserverFromAll(EventHandler<PlayerUpdatedEventArgs> observer)
-    {
-        foreach (var player in Players)
-            player.DetachObserver(observer);
+        _teamUpdated -= observer;
     }
     
     /// <summary>
@@ -85,11 +55,17 @@ public class Team
     /// </summary>
     /// <param name="sender">The sender of the event.</param>
     /// <param name="e">The event arguments containing the update information.</param>
-    public void PlayerChangedHandler(object? sender, PlayerUpdatedEventArgs e)
+    public void PlayerChangedHandler(object? sender, PlayerReceivedStats e)
     {
         CardsCount = GetBadCardsCount();
     }
 
+    private void OnTeamUpdated(TeamUpdatedEventArgs e)
+    {
+        var temp = _teamUpdated;
+        temp?.Invoke(this, e);
+    }
+    
     private int GetBadCardsCount()
         => Players.Sum(player => player.GetBadCardsCount());
 }

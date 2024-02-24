@@ -95,6 +95,7 @@ public class Player
     }
 
     private EventHandler<PlayerUpdatedEventArgs>? Updated;
+    private EventHandler<PlayerReceivedStats>? _statsReceived;
     
     [JsonConstructor]
     public Player(string id, string name, string position, int jerseyNumber, string teamName, List<Stat> stats)
@@ -137,6 +138,24 @@ public class Player
     }
 
     /// <summary>
+    /// Attaches an observer to the PlayerUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to attach.</param>
+    public void AttachUpdatedObserver(EventHandler<PlayerUpdatedEventArgs> observer)
+    {
+        Updated += observer;
+    }
+
+    /// <summary>
+    /// Detaches an observer from the PlayerUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to detach.</param>
+    public void DetachUpdatedObserver(EventHandler<PlayerUpdatedEventArgs> observer)
+    {
+        Updated -= observer;
+    }
+    
+    /// <summary>
     /// Raises the PlayerUpdated event.
     /// </summary>
     /// <param name="e">The event arguments containing the update information.</param>
@@ -147,21 +166,31 @@ public class Player
     }
 
     /// <summary>
-    /// Attaches an observer to the PlayerUpdated event.
+    /// Attaches an observer to the PlayerReceivedStats event.
     /// </summary>
     /// <param name="observer">The event handler to attach.</param>
-    public void AttachObserver(EventHandler<PlayerUpdatedEventArgs> observer)
+    public void AttachStatsReceivedObserver(EventHandler<PlayerReceivedStats> observer)
     {
-        Updated += observer;
+        _statsReceived += observer;
     }
 
     /// <summary>
-    /// Detaches an observer from the PlayerUpdated event.
+    /// Detaches an observer from the PlayerReceivedStats event.
     /// </summary>
     /// <param name="observer">The event handler to detach.</param>
-    public void DetachObserver(EventHandler<PlayerUpdatedEventArgs> observer)
+    public void DetachUpdatedObserver(EventHandler<PlayerReceivedStats> observer)
     {
-        Updated -= observer;
+        _statsReceived -= observer;
+    }
+    
+    /// <summary>
+    /// Raises the PlayerReceivedStats event.
+    /// </summary>
+    /// <param name="e">The event arguments containing the update information.</param>
+    public void OnPlayerStatsReceived(PlayerReceivedStats e)
+    {
+        var temp = _statsReceived;
+        temp?.Invoke(this, e);
     }
 
     /// <summary>

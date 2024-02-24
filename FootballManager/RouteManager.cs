@@ -39,7 +39,15 @@ public static class RouteManager
         var exitButton = new ActionButton("Выход", () => Environment.Exit(0));
         menuButtons.AddRange(new MenuButton[]{helpButton, exitButton});
         var menu = new Menu(menuButtons.ToArray(), "Меню");
-        menu.HandleUsing();
+        try
+        {
+            menu.HandleUsing();
+        }
+        catch (Exception)
+        {
+            Printer.PrintError("Произошла непредвиденная ошибка.");
+            InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+        }
     }
     
     /// <summary>
@@ -52,8 +60,9 @@ public static class RouteManager
         var swapButton = new SwapButton<string>("Кнопки со стрелками можно переключать, используя стрелки вправо-влево, на них так же можно нажать с помощью Enter",
             new []{"1", "2", "3"}, confirmAction: _ => Console.Beep());
         var returnButton = new ActionButton("Чтобы вернуться на прошлую страницу, нажмите Tab", Console.Beep);
+        var tipButton = new ActionButton("Для корректного отображения рекомендуется открыть приложение на весь экран", Console.Beep);
 
-        var helpMenu = new Menu(new MenuButton[] { movementsButton, actionButton, swapButton, returnButton }, "Помощь");
+        var helpMenu = new Menu(new MenuButton[] { movementsButton, actionButton, swapButton, returnButton, tipButton }, "Помощь");
         
         while (true)
         {
@@ -84,6 +93,13 @@ public static class RouteManager
         try
         {
             var jsonFile = File.ReadAllText(filePath);
+            if (jsonFile.Length == 0)
+            {
+                Printer.PrintError("Файл пуст.");
+                InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+                return null;
+            }
+                
             char firstLetter = jsonFile.TrimStart()[0];
             if (jsonFile.Contains("null"))
             {
@@ -160,7 +176,7 @@ public static class RouteManager
 
     private static void ChoosePlayerToChangePlayerData(Game game)
     {
-        var playersTable = new Table(new[]{42, 30, 15, 15, 20}, AlignMode.Center, new[] {AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center});
+        var playersTable = new Table(new[]{36, 26, 15, 15, 20}, AlignMode.Center, new[] {AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center});
         var headerButton = new ActionButton(playersTable.FormatRowItems(new[] {"Id", "Name", "Jersey number", "Position", "Team"}));
         var choosePlayerHeaderButtonsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{headerButton}, IsActive = false};
         while (true)
@@ -236,11 +252,10 @@ public static class RouteManager
     {
         while (true)
         {
-            Console.Write("Введите новый номер: ");
             if (!InputHandler.GetIntValue("Введите целое число для номера: ", "Введите новое целое число для номера: ",
-                    out int newJerseyNumber)) continue;
+                    out int newJerseyNumber)) return;
             
-            if (newJerseyNumber >= 0)
+            if (newJerseyNumber < 0)
             {
                 Printer.PrintError("Число должно быть неотрицательным.");
                 continue;
@@ -277,12 +292,12 @@ public static class RouteManager
                 Storage.CurrentGame.CreateNewTeam(newTeamName);
         }
         
-        playerToChange.DetachObserver(playerToChange.Team.PlayerChangedHandler);
+        playerToChange.DetachUpdatedObserver(playerToChange.Team.PlayerChangedHandler);
         playerToChange.Team.Players.Remove(playerToChange);
         var newTeam = Storage.CurrentGame.Teams.First(x => x.Name == newTeamName);
         playerToChange.Team = newTeam;
         playerToChange.TeamName = newTeamName;
-        playerToChange.AttachObserver(newTeam.PlayerChangedHandler);
+        playerToChange.AttachStatsReceivedObserver(newTeam.PlayerChangedHandler);
         newTeam.Players.Add(playerToChange);
         playerDataButtonsGroup.IsActive = true;
     }
@@ -330,19 +345,23 @@ public static class RouteManager
                     break;
                 case "Добавить красную карточку":
                     playerToChange.Stats.Add(new Stat("Red Cards"));
-                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs());
+                    playerToChange.OnPlayerStatsReceived(new PlayerReceivedStats());
                     break;
                 case "Добавить жёлтую карточку":
                     playerToChange.Stats.Add(new Stat("Yellow Cards"));
-                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs());
+                    playerToChange.OnPlayerStatsReceived(new PlayerReceivedStats());
                     break;
                 case "Добавить гол":
                     playerToChange.Stats.Add(new Stat("Goals"));
-                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs());
+                    playerToChange.OnPlayerStatsReceived(new PlayerReceivedStats());
                     break;
                 case "Добавить голевую передачу":
                     playerToChange.Stats.Add(new Stat("Assists"));
-                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs());
+                    playerToChange.OnPlayerStatsReceived(new PlayerReceivedStats());
                     break;
             }
         }

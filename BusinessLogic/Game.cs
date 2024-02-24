@@ -16,7 +16,7 @@ public class Game
 
     public string[] Positions { get; } = {"Midfielder", "Goalkeeper", "Defender", "Forward" };
     
-    private EventHandler<GameUpdatedEventArgs>? Updated;
+    private EventHandler<GameUpdatedEventArgs>? _gameUpdated;
 
     public Game(List<Player> players, string fileName)
     {
@@ -34,9 +34,9 @@ public class Game
     /// Raises the GameUpdated event.
     /// </summary>
     /// <param name="e">The event arguments containing the update information.</param>
-    public void OnGameUpdated(GameUpdatedEventArgs e)
+    private void OnGameUpdated(GameUpdatedEventArgs e)
     {
-        var temp = Updated;
+        var temp = _gameUpdated;
         temp?.Invoke(this, e);
     }
     
@@ -46,7 +46,7 @@ public class Game
     /// <param name="observer">The event handler to attach.</param>
     public void AttachObserver(EventHandler<GameUpdatedEventArgs> observer)
     {
-        Updated += observer;
+        _gameUpdated += observer;
     }
     
     /// <summary>
@@ -55,7 +55,7 @@ public class Game
     /// <param name="observer">The event handler to detach.</param>
     public void DetachObserver(EventHandler<GameUpdatedEventArgs> observer)
     {
-        Updated -= observer;
+        _gameUpdated -= observer;
     }
     
     /// <summary>
@@ -65,7 +65,7 @@ public class Game
     public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)
-            player.AttachObserver(observer);
+            player.AttachUpdatedObserver(observer);
     }
     
     /// <summary>
@@ -75,7 +75,7 @@ public class Game
     public void DetachObserverFromAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)
-            player.DetachObserver(observer);
+            player.DetachUpdatedObserver(observer);
     }
 
     /// <summary>
@@ -133,29 +133,24 @@ public class Game
                 if (player.TeamName == team.Name)
                 {
                     team.Players.Add(player);
-                    player.AttachObserver(team.PlayerChangedHandler);
+                    player.AttachStatsReceivedObserver(team.PlayerChangedHandler);
                     player.Team = team;
                 }
     }
-
-    /// <summary>
-    /// Creates a new team with the specified name and list of players.
-    /// </summary>
-    /// <param name="name">The name of the team.</param>
-    /// <param name="players">The list of players in the team.</param>
-    public void CreateNewTeam(string name, List<Player> players)
-    {
-        var team = new Team(name, players);
-        Teams.Add(team);
-        team.AttachObserver(TeamChangedHandler);
-    }
-
+    
     /// <summary>
     /// Creates a new team with the specified name.
     /// </summary>
     /// <param name="name">The name of the team.</param>
     public void CreateNewTeam(string name)
         => CreateNewTeam(name, new List<Player>()); 
+    
+    private void CreateNewTeam(string name, List<Player> players)
+    {
+        var team = new Team(name, players);
+        Teams.Add(team);
+        team.AttachObserver(TeamChangedHandler);
+    }
     
     private void TeamChangedHandler(object? sender, TeamUpdatedEventArgs e)
     {
