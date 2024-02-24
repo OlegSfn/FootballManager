@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BusinessLogic\BusinessLogic.csproj" />
-      <ProjectReference Include="..\UILayer\UILayer.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,8 +1,11 @@
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace BusinessLogic;
+namespace BusinessLogic.PlayerData;
 
+/// <summary>
+/// Represents a statistical data associated with a player.
+/// </summary>
 public class Stat
 {
     [JsonPropertyName("statId")]
@@ -11,26 +14,32 @@ public class Stat
     [JsonPropertyName("statType")]
     public string Type { get; init; }
 
-    public Stat(string type)
+    [JsonConstructor]
+    public Stat(string id, string type)
     {
-        Id = GenerateId();
+        if (id is null)
+            throw new ArgumentNullException(nameof(id));
+        if (type is null)
+            throw new ArgumentNullException(nameof(type));
+        
+        Id = id;
         Type = type;
     }
     
+    public Stat(string type) : this(GenerateId(), type) { }
     
-    public StatType ConvertStringTypeToEnum(string type) => type switch
+    /// <summary>
+    /// Gets the enumeration type corresponding to the statistical data type.
+    /// </summary>
+    /// <returns>The enumeration type of the statistical data.</returns>
+    public StatType GetEnumType() => Type switch
     {
         "Yellow Cards" => StatType.YellowCards,
         "Red Cards" => StatType.RedCards,
         "Assists" => StatType.Assists,
         "Goals" => StatType.Goals,
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        _ => throw new ArgumentOutOfRangeException(nameof(Type), Type, null)
     };
-
-    public override string ToString()
-    {
-        return $"{Id} | {Type}";
-    }
 
     private static string GenerateId()
     {

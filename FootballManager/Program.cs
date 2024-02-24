@@ -6,9 +6,10 @@ public class Program
     // C:\Users\Oleg\Downloads\empty.json
     // C:\Users\Oleg\Downloads\one object.json
     // C:\Users\Oleg\Downloads\corrupted.json
-    // TODO: check null
     public static void Main()
     {
+        RouteManager.OpenHelp();
+        
         while (true)
         {
             RouteManager.EnterMainMenu();

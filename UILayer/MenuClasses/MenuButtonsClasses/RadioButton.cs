@@ -1,6 +1,9 @@
 namespace UILayer.MenuClasses.MenuButtonsClasses;
 using MenuButtonGroupsClasses;
 
+/// <summary>
+/// Represents a button in a menu that behaves like a radio button, allowing selection within a group.
+/// </summary>
 public class RadioButton : MenuButton
 {
     private RadioButtonsGroup _radioButtonGroup;
@@ -12,6 +15,10 @@ public class RadioButton : MenuButton
         _radioButtonGroup = radioButtonGroup;
     }
     
+    /// <summary>
+    /// Selects this button in her RadioButtonsGroup.
+    /// </summary>
+    /// <param name="key">The console key to register the action for.</param>
     public override void RegisterAction(ConsoleKey key)
     {
         if (key == ConsoleKey.Spacebar)

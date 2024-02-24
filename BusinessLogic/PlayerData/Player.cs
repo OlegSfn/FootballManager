@@ -2,10 +2,12 @@ using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BusinessLogic.EventArgs;
-using Extensions;
 
 namespace BusinessLogic.PlayerData;
 
+/// <summary>
+/// Represents a player in a football team.
+/// </summary>
 public class Player
 {
     [JsonPropertyName("playerId")] public string Id { get; }
@@ -17,6 +19,9 @@ public class Player
         get => _name;
         set
         {
+            if (_name == value)
+                return;
+            
             _name = value;
             OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
         }
@@ -30,6 +35,9 @@ public class Player
         get => _position;
         set
         {
+            if (_position == value)
+                return;
+
             _position = value;
             OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
         }
@@ -46,6 +54,9 @@ public class Player
             if (value < 0)
                 throw new ArgumentException("Jersey number cannot be negative");
             
+            if (_jerseyNumber == value)
+                return;
+
             _jerseyNumber = value;
             OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
         }
@@ -59,6 +70,9 @@ public class Player
         get => _teamNameName;
         set
         {
+            if (_teamNameName == value)
+                return;
+            
             _teamNameName = value;
             OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
         }
@@ -67,13 +81,13 @@ public class Player
     [JsonIgnore]
     public Team Team { get; set; }
 
-    private List<Stat> _stats;
+    private readonly List<Stat> _stats;
 
     [JsonPropertyName("stats")]
     public List<Stat> Stats
     {
         get => _stats;
-        set
+        init
         {
             _stats = value;
             OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
@@ -83,8 +97,20 @@ public class Player
     private EventHandler<PlayerUpdatedEventArgs>? Updated;
     private readonly string _split = new string(' ', 5);
     
+    [JsonConstructor]
     public Player(string id, string name, string position, int jerseyNumber, string teamName, List<Stat> stats)
     {
+        if (id is null)
+            throw new ArgumentNullException(nameof(id));
+        if (name is null)
+            throw new ArgumentNullException(nameof(name));
+        if (position is null)
+            throw new ArgumentNullException(nameof(position));
+        if (teamName is null)
+            throw new ArgumentNullException(nameof(teamName));
+        if (stats is null)
+            throw new ArgumentNullException(nameof(stats));
+            
         Id = id;
         Name = name;
         Position = position;
@@ -93,42 +119,65 @@ public class Player
         Stats = stats;
     }
 
+    /// <summary>
+    /// Compares the current player with another player based on the specified field name.
+    /// </summary>
+    /// <param name="other">The other player to compare with.</param>
+    /// <param name="fieldName">The name of the field to compare.</param>
+    /// <returns>An integer that indicates the relative order of the players.</returns>
     public int CompareTo(Player other, string fieldName)
-    {
-        return fieldName switch
-        {
-            "Id" => Comparer.DefaultInvariant.Compare(Id, other.Id),
-            "Name" or "Имя" => Comparer.DefaultInvariant.Compare(Name, other.Name),
-            "Position" or "Позиция" => Comparer.DefaultInvariant.Compare(Position, other.Position),
-            "Jersey number" or "Игровой номер" => Comparer.DefaultInvariant.Compare(JerseyNumber, other.JerseyNumber),
-            "Team" or "Команда" => Comparer.DefaultInvariant.Compare(TeamName, other.TeamName),
-            _ => throw new ArgumentOutOfRangeException(nameof(fieldName), fieldName, null)
-        };
-    }
+        => fieldName switch
+            {
+                "Id" => Comparer.DefaultInvariant.Compare(Id, other.Id),
+                "Name" or "Имя" => Comparer.DefaultInvariant.Compare(Name, other.Name),
+                "Position" or "Позиция" => Comparer.DefaultInvariant.Compare(Position, other.Position),
+                "Jersey number" or "Игровой номер" => Comparer.DefaultInvariant.Compare(JerseyNumber, other.JerseyNumber),
+                "Team" or "Команда" => Comparer.DefaultInvariant.Compare(TeamName, other.TeamName),
+                _ => throw new ArgumentOutOfRangeException(nameof(fieldName), fieldName)
+            };
     
+    /// <summary>
+    /// Serializes the player object to its JSON representation.
+    /// </summary>
+    /// <returns>A JSON string representing the player object.</returns>
     public string ToJson()
     {
         var options = new JsonSerializerOptions { WriteIndented = true };
         return JsonSerializer.Serialize(this, options);
     }
 
+    /// <summary>
+    /// Raises the PlayerUpdated event.
+    /// </summary>
+    /// <param name="e">The event arguments containing the update information.</param>
     public void OnPlayerUpdated(PlayerUpdatedEventArgs e)
     {
         var temp = Updated;
         temp?.Invoke(this, e);
     }
 
+    /// <summary>
+    /// Attaches an observer to the PlayerUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to attach.</param>
     public void AttachObserver(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         Updated += observer;
     }
 
+    /// <summary>
+    /// Detaches an observer from the PlayerUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to detach.</param>
     public void DetachObserver(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         Updated -= observer;
     }
 
+    /// <summary>
+    /// Gets the count of bad cards associated with the player.
+    /// </summary>
+    /// <returns>The count of bad cards.</returns>
     public int GetBadCardsCount()
-        => Stats.Count(stat => stat.ConvertStringTypeToEnum(stat.Type) is StatType.RedCards or StatType.YellowCards);
-
+        => Stats.Count(stat => stat.GetEnumType() is StatType.RedCards or StatType.YellowCards);
 }

@@ -3,6 +3,9 @@ using Extensions;
 
 namespace UILayer.TableClasses;
 
+/// <summary>
+/// Represents a table for displaying data with customizable alignment.
+/// </summary>
 public class Table
 {
     private readonly AlignMode[] _columnAlign;
@@ -21,6 +24,12 @@ public class Table
         _columnAlign = columnAlign;
     }
 
+    /// <summary>
+    /// Formats the items of a row according to the column alignments and sizes.
+    /// </summary>
+    /// <param name="rowItems">An array of strings representing the items in the row.</param>
+    /// <returns>A formatted string representing the row.</returns>
+    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="rowItems"/> does not match the number of columns.</exception>
     public string FormatRowItems(string[] rowItems)
     {
         if (rowItems.Length != _columnSizes.Length)

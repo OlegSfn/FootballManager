@@ -11,72 +11,119 @@ using UILayer.TableClasses;
 
 namespace FootballManager;
 
+/// <summary>
+/// Manages the routes and navigation within the application.
+/// </summary>
 public static class RouteManager
 {
-    public static void HandleFirstUsing()
-    {
-        
-    }
-    
+    /// <summary>
+    /// Enters the main menu of the application.
+    /// </summary>
     public static void EnterMainMenu()
     {
         var enterNewDataButton = new ActionButton("Ввести данные о новой игре из файла", EnterNewData);
-        List<MenuButton> menuButtons = new List<MenuButton>{enterNewDataButton};
+        var menuButtons = new List<MenuButton>{enterNewDataButton};
 
         if (Storage.GameDatas.Count > 0)
         {
-            var changeCurrentGameButton = new SwapButton<GameData>("Текущая игра", Storage.GameDatas.ToArray(), swapAction:ChangeCurrentGame);
+            var changeCurrentGameButton = new SwapButton<Game>("Текущая игра", Storage.GameDatas.ToArray(), swapAction:ChangeCurrentGame,
+                startIndex: Storage.GameDatas.IndexOf(Storage.CurrentGame));
             var sortPlayersButton = new ActionButton("Отсортировать игроков", SortPlayers);
-            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChoosePlayerToChangePlayerData, Storage.CurrentGame);
+            var changePlayerDataButton = new ActionButton<Game>("Изменить данные об игроке", ChoosePlayerToChangePlayerData, Storage.CurrentGame);
             menuButtons.AddRange(new MenuButton[]{changeCurrentGameButton, sortPlayersButton, changePlayerDataButton});
         }
         
-        var settingsButton = new ActionButton("Настройки", Settings);
-        var helpButton = new ActionButton("Помощь", Help);
+        var helpButton = new ActionButton("Помощь", OpenHelp);
         var exitButton = new ActionButton("Выход", () => Environment.Exit(0));
-        menuButtons.AddRange(new MenuButton[]{settingsButton, helpButton, exitButton});
-        var menu = new Menu("Меню:", menuButtons.ToArray());
+        menuButtons.AddRange(new MenuButton[]{helpButton, exitButton});
+        var menu = new Menu(menuButtons.ToArray(), "Меню");
         menu.HandleUsing();
     }
+    
+    /// <summary>
+    /// Opens the help menu providing guidance on how to use the application.
+    /// </summary>
+    public static void OpenHelp()
+    {
+        var movementsButton = new ActionButton("Чтобы передвигаться по меню, используйте стрелки вверх-вниз", Console.Beep);
+        var actionButton = new ActionButton("Чтобы нажать на кнопку, используйте Enter", Console.Beep);
+        var swapButton = new SwapButton<string>("Кнопки со стрелками можно переключать, используя стрелки вправо-влево, на них так же можно нажать с помощью Enter",
+            new []{"1", "2", "3"}, confirmAction: _ => Console.Beep());
+        var returnButton = new ActionButton("Чтобы вернуться на прошлую страницу, нажмите Tab", Console.Beep);
+
+        var helpMenu = new Menu(new MenuButton[] { movementsButton, actionButton, swapButton, returnButton }, "Помощь");
+        
+        while (true)
+        {
+            if (!helpMenu.HandleUsing())
+                return;
+        }
+        
+    }
+
 
     private static void EnterNewData()
     {
         string? filePath = InputHandler.GetFilePathToJson("Введите путь до файла с данными: ");
         if (filePath == null)
             return;
-
-        List<Player> players = new List<Player>();
-        //TODO: make another check on array.
-        try
-        {
-            players = JsonSerializer.Deserialize<List<Player>>(File.ReadAllText(filePath));
-        }
-        catch (JsonException)
-        {
-            try
-            {
-                players = new List<Player> { JsonSerializer.Deserialize<Player>(File.ReadAllText(filePath)) };
-            }
-            catch (JsonException)
-            {
-                Printer.PrintError("Введён неверный json файл.");
-                InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
-            }
-        }
+        var players = GetPlayersFromFile(filePath);
+        if (players == null || players.Count == 0)
+            return;
         
-        if (players != null)
-        {
-            var gameData = new GameData(players, Path.GetFileName(filePath));
-            Storage.GameDatas.Add(gameData);
-            Storage.CurrentGame = gameData;
-            AddNewGame(gameData);
-        }
-        else
-            Console.WriteLine("Не найдены данные об игроках в файле.");
-        
+        var gameData = new Game(players, Path.GetFileName(filePath));
+        AddNewGame(gameData);
+        Storage.CurrentGame = gameData;
     }
 
-    private static void ChangeCurrentGame(GameData game)
+    private static List<Player>? GetPlayersFromFile(string filePath)
+    {
+        var players = new List<Player>();
+
+        try
+        {
+            using var sr = new StreamReader(filePath);
+            char firstLetter;
+            while (char.IsWhiteSpace(firstLetter = (char)sr.Read()))
+            {
+            }
+
+            using FileStream fs = File.OpenRead(filePath);
+            if (firstLetter == '[')
+                players = JsonSerializer.Deserialize<List<Player>>(fs);
+            else if (firstLetter == '{')
+                players = new List<Player> { JsonSerializer.Deserialize<Player>(fs)! };
+            else
+            {
+                Printer.PrintError("Json файл должен начинаться с \"[\" или \"{\"");
+                InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+                return players;
+            }
+        }
+        catch (JsonException ex)
+        {
+            if (ex.InnerException is InvalidOperationException)
+            {
+                Printer.PrintError("В файле неверно указан номер игрока.");
+                InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+                return players;
+            }
+            
+            Printer.PrintError("Введён неверный json файл.");
+            InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+            return players;
+        }
+        catch (ArgumentNullException)
+        {
+            Printer.PrintError("В файле есть некорректные поля или нет данных об игроках.");
+            InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
+            return players;
+        }
+
+        return players;
+    }
+
+    private static void ChangeCurrentGame(Game game)
     {
         Storage.CurrentGame = game;
     }
@@ -87,19 +134,19 @@ public static class RouteManager
         var sortModes = new[] { "По возрастанию", "По убыванию" };
         var sortTypeButton = new SwapButton<string>("Сортировать по", sortTypes, isCycled:true);
         var sortModeButton = new SwapButton<string>("Режим сортировки", sortModes, isCycled:true);
-        var sortModeMenu = new Menu("Настройки сортировки:",new MenuButton[]{sortTypeButton, sortModeButton});
+        var sortModeMenu = new Menu(new MenuButton[]{sortTypeButton, sortModeButton}, "Настройки сортировки");
         if (!sortModeMenu.HandleUsing())
             return;
 
-        bool isReversed = sortModeButton.CurVariant == "По убыванию";
+        var isReversed = sortModeButton.CurVariant == "По убыванию";
         var sortedPlayers = Storage.CurrentGame.SortPlayers(sortTypeButton.CurVariant, isReversed);
-        var newGameData = new GameData(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
-        Storage.GameDatas.Add(newGameData);
+        var newGameData = new Game(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
         AddNewGame(newGameData);
+        Storage.CurrentGame = newGameData;
         ChoosePlayerToChangePlayerData(newGameData);
     }
 
-    private static void ChoosePlayerToChangePlayerData(GameData gameData)
+    private static void ChoosePlayerToChangePlayerData(Game game)
     {
         var playersTable = new Table(new[]{42, 30, 15, 15, 20}, AlignMode.Center, new[] {AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center});
         var headerButton = new ActionButton(playersTable.FormatRowItems(new[] {"Id", "Name", "Jersey number", "Position", "Team"}));
@@ -107,14 +154,15 @@ public static class RouteManager
         while (true)
         {
             Player chosenPlayer = null!;
-            MenuButton[] playerButtons = gameData.Players.Select(
+            MenuButton[] playerButtons = game.Players.Select(
                     x => 
                         new ActionButton<Player>(playersTable.FormatRowItems(new[]{x.Id, x.Name, x.JerseyNumber.ToString(),
                             x.Position, x.TeamName}), player => chosenPlayer = player, x))
                 .ToArray();
             
             var choosePlayerButtonsGroup = new ButtonsGroup{MenuButtons = playerButtons};
-            var playersMenu = new Menu("Выберите игрока, данные о котором вы хотите поменять:", new[]{choosePlayerHeaderButtonsGroup, choosePlayerButtonsGroup});
+            var playersMenu = new Menu(new[]{choosePlayerHeaderButtonsGroup, choosePlayerButtonsGroup}, 
+                "Выберите игрока, данные о котором вы хотите поменять");
 
             if (!playersMenu.HandleUsing())
                 return;
@@ -138,7 +186,7 @@ public static class RouteManager
                 { changeNameButton, changePositionButton, changeJerseyNumButton, changeTeamButton, changeStatsButton };
             changePlayerMenuGroup.MenuButtons = changePlayerButtons;
             
-            var changeFieldMenu = new Menu($"Выберите параметр, который нужно изменить у {chosenPlayer.Name}:", new []{changePlayerMenuGroup});
+            var changeFieldMenu = new Menu(new []{changePlayerMenuGroup}, $"Выберите параметр, который нужно изменить у {chosenPlayer.Name}");
             if (!changeFieldMenu.HandleUsing())
                 break;
             lastCursorPosition = changePlayerMenuGroup.CursorPosition;
@@ -157,9 +205,11 @@ public static class RouteManager
     private static void ChangePlayerPosition(Player playerToChange, ButtonsGroup playerDataButtonsGroup)
     {
         playerDataButtonsGroup.IsActive = false;
-        var positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions);
+        var positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions,
+            startIndex: Array.FindIndex(Storage.CurrentGame.Positions, x => x == playerToChange.Position));
         var playerPositionButtonsGroup = new ButtonsGroup { MenuButtons = new MenuButton[]{ positionsButton} };
-        var changePlayerPositionMenu = new Menu($"Выберите параметр, который нужно изменить у {playerToChange.Name}:", new [] { playerDataButtonsGroup, playerPositionButtonsGroup });
+        var changePlayerPositionMenu = new Menu(new [] { playerDataButtonsGroup, playerPositionButtonsGroup },
+            $"Выберите параметр, который нужно изменить у {playerToChange.Name}");
         if (!changePlayerPositionMenu.HandleUsing())
         {
             playerDataButtonsGroup.IsActive = true;
@@ -192,9 +242,11 @@ public static class RouteManager
     {
         playerDataButtonsGroup.IsActive = false;
         string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
-        var teamsButton = new SwapButton<string>("Новая команда", teamsNames); 
+        var teamsButton = new SwapButton<string>("Новая команда", teamsNames, 
+            startIndex: Storage.CurrentGame.Teams.FindIndex(x => x.Name == playerToChange.TeamName)); 
         var playerTeamButtonsGroup = new ButtonsGroup { MenuButtons = new MenuButton[]{ teamsButton} };
-        var changePlayerTeamMenu = new Menu($"Выберите параметр, который нужно изменить у {playerToChange.Name}:",new[] { playerDataButtonsGroup, playerTeamButtonsGroup });
+        var changePlayerTeamMenu = new Menu(new[] { playerDataButtonsGroup, playerTeamButtonsGroup }, 
+            $"Выберите параметр, который нужно изменить у {playerToChange.Name}");
         if (!changePlayerTeamMenu.HandleUsing())
         {
             playerDataButtonsGroup.IsActive = true;
@@ -226,14 +278,24 @@ public static class RouteManager
         string[] statsActionsText = { "Добавить красную карточку", "Добавить жёлтую карточку", "Добавить гол", "Добавить голевую передачу", "Удалить статистику" };
         var statsButton = new SwapButton<string>("Выберите действие со статистикой", statsActionsText);
         var playerChangeStatsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{statsButton}};
+        var statsTable = new Table(new[]{42, 20}, AlignMode.Center, new[] {AlignMode.Center, AlignMode.Center});
+        
+        var headerButton = new ActionButton(statsTable.FormatRowItems(new[] {"Id", "Type"}));
+        var playerstatsHeaderButtonsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{headerButton}, IsActive = false};
+        
         while (true)
         {
             MenuButton[] playerStatsButtons = new MenuButton[playerToChange.Stats.Count];
             for (int i = 0; i < playerToChange.Stats.Count; i++)
-                playerStatsButtons[i] = new ActionButton<int>(playerToChange.Stats[i].ToString(), index => playerToChange.Stats.RemoveAt(index), i);
+                playerStatsButtons[i] = new ActionButton<int>(statsTable.FormatRowItems(new [] {playerToChange.Stats[i].Id, playerToChange.Stats[i].Type}),
+                    index =>
+                    {
+                        playerToChange.Stats.RemoveAt(index);
+                        playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    }, i);
 
             var playerStatsGroup = new ButtonsGroup{MenuButtons = playerStatsButtons, IsActive = false};
-            var playerStatsMenu = new Menu(new[]{playerStatsGroup, playerChangeStatsGroup });
+            var playerStatsMenu = new Menu(new[]{playerstatsHeaderButtonsGroup, playerStatsGroup, playerChangeStatsGroup });
             if (!playerStatsMenu.HandleUsing())
                 return;
         
@@ -243,14 +305,13 @@ public static class RouteManager
                     if (playerToChange.Stats.Count == 0)
                     {
                         Printer.PrintError("У игрока нет статистики.");
-                        InputHandler.WaitForUserInput("Нажмите любую клавишу для продолжения: "); //TODO: mb change? 
+                        InputHandler.WaitForUserInput("Нажмите любую клавишу для продолжения: "); 
                         break;
                     }
                         
                     playerStatsGroup.IsActive = true;
                     playerChangeStatsGroup.IsActive = false;
                     playerStatsMenu.HandleUsing();
-                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
                     playerChangeStatsGroup.IsActive = true;
                     break;
                 case "Добавить красную карточку":
@@ -273,26 +334,17 @@ public static class RouteManager
         }
     }
     
-    private static void Settings()
-    {
-        throw new NotImplementedException();
-    }
-
-    private static void Help()
-    {
-        throw new NotImplementedException();
-    }
-
     private static void GameChangedHandler(object? sender, GameUpdatedEventArgs e)
     {
-        Printer.PrintInfo(e.Message);
+        Printer.PrintInfo($"Сообщение от игры: {e.Message}");
         InputHandler.WaitForUserInput("Нажмите любую клавишу, чтобы продолжить: ");
     }
 
-    private static void AddNewGame(GameData newGameData)
+    private static void AddNewGame(Game newGame)
     {
         var autoSaver = new AutoSaver();
-        newGameData.AttachObserverToAll(autoSaver.PlayerChangedHandler);
-        newGameData.AttachObserver(GameChangedHandler);
+        Storage.GameDatas.Add(newGame);
+        newGame.AttachObserverToAll(autoSaver.PlayerChangedHandler);
+        newGame.AttachObserver(GameChangedHandler);
     }
 }

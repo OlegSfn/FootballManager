@@ -1,11 +1,13 @@
-using System.Collections;
 using System.Text.Json;
 using BusinessLogic.EventArgs;
 using BusinessLogic.PlayerData;
 
 namespace BusinessLogic;
 
-public class GameData
+/// <summary>
+/// Represents a football game.
+/// </summary>
+public class Game
 {
     public List<Player> Players { get; }
     public List<Team> Teams { get; }
@@ -16,14 +18,7 @@ public class GameData
     
     private EventHandler<GameUpdatedEventArgs>? Updated;
 
-    public GameData(List<Player> players, List<Team> teams, string fileName)
-    {
-        Players = players;
-        Teams = teams;
-        FileName = fileName;
-    }
-
-    public GameData(List<Player> players, string fileName)
+    public Game(List<Player> players, string fileName)
     {
         Players = players;
         FileName = fileName;
@@ -33,31 +28,60 @@ public class GameData
 
     public override string ToString() => FileName;
     
+    /// <summary>
+    /// Raises the GameUpdated event.
+    /// </summary>
+    /// <param name="e">The event arguments containing the update information.</param>
     public void OnGameUpdated(GameUpdatedEventArgs e)
     {
         var temp = Updated;
         temp?.Invoke(this, e);
     }
+    
+    /// <summary>
+    /// Attaches an observer to the GameUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to attach.</param>
     public void AttachObserver(EventHandler<GameUpdatedEventArgs> observer)
     {
         Updated += observer;
     }
+    
+    /// <summary>
+    /// Detaches an observer from the GameUpdated event.
+    /// </summary>
+    /// <param name="observer">The event handler to detach.</param>
     public void DetachObserver(EventHandler<GameUpdatedEventArgs> observer)
     {
         Updated -= observer;
     }
     
+    /// <summary>
+    /// Attaches an observer to the PlayerUpdated event of all players in the game.
+    /// </summary>
+    /// <param name="observer">The event handler to attach.</param>
     public void AttachObserverToAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)
             player.AttachObserver(observer);
     }
+    
+    /// <summary>
+    /// Detaches an observer from the PlayerUpdated event of all players in the game.
+    /// </summary>
+    /// <param name="observer">The event handler to detach.</param>
     public void DetachObserverFromAll(EventHandler<PlayerUpdatedEventArgs> observer)
     {
         foreach (var player in Players)
             player.DetachObserver(observer);
     }
 
+    /// <summary>
+    /// Sorts the players based on the specified field name and sorting order.
+    /// </summary>
+    /// <param name="fieldName">The name of the field to sort by.</param>
+    /// <param name="isReversed">A value indicating whether the sorting order is reversed.</param>
+    /// <returns>The sorted array of players.</returns>
     public Player[] SortPlayers(string fieldName, bool isReversed)
     {
         var sortedPlayers = new Player[Players.Count];
@@ -75,13 +99,10 @@ public class GameData
         return sortedPlayers;
     }
 
-    // TODO: Assert fileName
-    public static void SaveToFile(string fileName, List<Player> players)
-    {
-        using StreamWriter sw = new($"{fileName}");
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        sw.Write(JsonSerializer.Serialize(players, options));
-    }
+    /// <summary>
+    /// Saves the game data to a file.
+    /// </summary>
+    /// <param name="fileName">The name of the file to save to.</param>
     public void SaveToFile(string fileName)
     {
         using StreamWriter sw = new($"{fileName}");
@@ -90,7 +111,9 @@ public class GameData
     }
     
 
-    // O(nm) - creation of teams, n - number of players, m - number of teams.
+    /// <summary>
+    /// Creates teams based on the players participating in the game.
+    /// </summary>
     private void CreateTeams()
     {
         HashSet<string> teamNames = new HashSet<string>();
@@ -113,6 +136,11 @@ public class GameData
                 }
     }
 
+    /// <summary>
+    /// Creates a new team with the specified name and list of players.
+    /// </summary>
+    /// <param name="name">The name of the team.</param>
+    /// <param name="players">The list of players in the team.</param>
     public void CreateNewTeam(string name, List<Player> players)
     {
         Team team = new Team(name, players);
@@ -120,6 +148,10 @@ public class GameData
         team.AttachObserver(TeamChangedHandler);
     }
 
+    /// <summary>
+    /// Creates a new team with the specified name.
+    /// </summary>
+    /// <param name="name">The name of the team.</param>
     public void CreateNewTeam(string name)
         => CreateNewTeam(name, new List<Player>()); 
     

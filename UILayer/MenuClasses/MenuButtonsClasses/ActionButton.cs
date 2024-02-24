@@ -1,5 +1,8 @@
 namespace UILayer.MenuClasses.MenuButtonsClasses;
 
+/// <summary>
+/// Represents a button in a menu that performs a specified action when pressed.
+/// </summary>
 public class ActionButton : MenuButton
 {
     private readonly Action _action;
@@ -13,18 +16,27 @@ public class ActionButton : MenuButton
     public ActionButton(string text) : this(text, () => { }) { }
     
 
+    /// <summary>
+    /// Invoke Action that is associated with this button.
+    /// </summary>
+    /// <param name="key">The console key to register the action for.</param>
     public override void RegisterAction(ConsoleKey key)
     {
         if (key == ConsoleKey.Enter)
             _action?.Invoke();
     }
 
+    /// <inheritdoc/>
     public override string ToString()
     {
         return $"{Text}";
     }
 }
 
+/// <summary>
+/// Represents a button in a menu that performs a specified action with a context when activated.
+/// </summary>
+/// <typeparam name="T">The type of the context for the action.</typeparam>
 public class ActionButton<T> : MenuButton
 {
     private readonly Action<T> _action;
@@ -39,12 +51,17 @@ public class ActionButton<T> : MenuButton
 
     public ActionButton(string text, T context) : this(text, _ => { }, context) { }
     
+    /// <summary>
+    /// Invoke Action that is associated with this button.
+    /// </summary>
+    /// <param name="key">The console key to register the action for.</param>
     public override void RegisterAction(ConsoleKey key)
     {
         if (key == ConsoleKey.Enter)
             _action?.Invoke(_context);
     }
 
+    /// <inheritdoc/>
     public override string ToString()
     {
         return $"{Text}";

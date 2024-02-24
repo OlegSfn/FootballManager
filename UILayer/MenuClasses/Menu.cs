@@ -4,49 +4,66 @@ using UILayer.MenuClasses.MenuButtonsClasses;
 
 namespace UILayer.MenuClasses;
 
+/// <summary>
+/// Represents a menu in a user interface.
+/// </summary>
 public class Menu
 {
     private ButtonsGroup[] _groups;
     private int _groupIndex;
     private ButtonsGroup SelectedGroup => _groups[_groupIndex];
     private string _header;
-    private AlignMode _headerAlign = AlignMode.Center;
-    private AlignMode _buttonsAlign = AlignMode.Center;
+    private AlignMode _headerAlign;
+    private AlignMode _buttonsAlign;
     public bool ShowSelected { get; set; } = true;
 
     //TODO: Force user to choose at least one of the radiobutton.
-    public Menu(string header, MenuButton[] buttons)
+    public Menu(MenuButton[] buttons, string header = "", AlignMode headerAlign = AlignMode.Center, AlignMode buttonsAlign = AlignMode.Center)
     {
         _header = header;
         _groups = new ButtonsGroup[] {new()};
         _groups[0].MenuButtons = buttons;
         _groupIndex = 0;
+        _headerAlign = headerAlign;
+        _buttonsAlign = buttonsAlign;
     }
 
-    public Menu(string header, ButtonsGroup[] groups)
+    public Menu(ButtonsGroup[] groups, string header = "", AlignMode headerAlign = AlignMode.Center, AlignMode buttonsAlign = AlignMode.Center)
     {
         _header = header;
         _groups = groups;
         _groupIndex = 0;
+        _headerAlign = headerAlign;
+        _buttonsAlign = buttonsAlign;
     }
 
-    public Menu(MenuButton[] buttons) : this(string.Empty, buttons){ }
-    public Menu(ButtonsGroup[] groups) : this(string.Empty, groups){ }
-
-    public Menu(MenuButton button) : this(string.Empty, new [] { button }) { }
-
+    /// <summary>
+    /// Handles the interaction with the menu.
+    /// </summary>
+    /// <returns><c>true</c> if the menu interaction needed to be repeated; otherwise, <c>false</c>.</returns>
+    /// <exception cref="Exception">Thrown when all groups are inactive.</exception>
     public bool HandleUsing()
     {
-        if (SelectedGroup.IsActive == false)
+        if (!SelectedGroup.IsActive || !SelectedGroup.MenuButtons[SelectedGroup.CursorPosition].IsActive)
         {
+            bool findNewPos = false;
             for (int i = 0; i < _groups.Length; i++)
             {
-                if (_groups[i].IsActive)
+                if (!_groups[i].IsActive) continue;
+                
+                for (int j = 0; j < _groups[i].MenuButtons.Length; j++)
                 {
-                    _groupIndex = i;
-                    //TODO: find visible menu point and place cursor on it;
-                    break;
+                    if (_groups[i].MenuButtons[j].IsActive)
+                    {
+                        _groupIndex = i;
+                        _groups[i].CursorPosition = j;
+                        findNewPos = true;
+                        break;
+                    }
                 }
+                
+                if (findNewPos)
+                    break;
             }
             
             if (SelectedGroup.IsActive == false)
