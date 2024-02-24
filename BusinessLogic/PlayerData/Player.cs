@@ -1,9 +1,10 @@
 using System.Collections;
-using BusinessLogic.EventArgs;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BusinessLogic.EventArgs;
+using Extensions;
 
-namespace BusinessLogic;
+namespace BusinessLogic.PlayerData;
 
 public class Player
 {
@@ -11,10 +12,14 @@ public class Player
 
     private string _name;
     [JsonPropertyName("playerName")]
-    public string Name 
-    { 
+    public string Name
+    {
         get => _name;
-        set => _name = value;
+        set
+        {
+            _name = value;
+            OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+        }
     }
 
     private string _position;
@@ -23,7 +28,11 @@ public class Player
     public string Position
     {
         get => _position;
-        set => _position = value;
+        set
+        {
+            _position = value;
+            OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+        }
     }
 
     private int _jerseyNumber;
@@ -32,7 +41,14 @@ public class Player
     public int JerseyNumber
     {
         get => _jerseyNumber;
-        set => _jerseyNumber = value;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentException("Jersey number cannot be negative");
+            
+            _jerseyNumber = value;
+            OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+        }
     }
 
     private string _teamNameName;
@@ -41,9 +57,13 @@ public class Player
     public string TeamName
     {
         get => _teamNameName;
-        set => _teamNameName = value;
+        set
+        {
+            _teamNameName = value;
+            OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+        }
     }
-    
+
     [JsonIgnore]
     public Team Team { get; set; }
 
@@ -53,10 +73,15 @@ public class Player
     public List<Stat> Stats
     {
         get => _stats;
-        set => _stats = value;
+        set
+        {
+            _stats = value;
+            OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+        }
     }
-    
+
     private EventHandler<PlayerUpdatedEventArgs>? Updated;
+    private readonly string _split = new string(' ', 5);
     
     public Player(string id, string name, string position, int jerseyNumber, string teamName, List<Stat> stats)
     {
@@ -105,4 +130,5 @@ public class Player
 
     public int GetBadCardsCount()
         => Stats.Count(stat => stat.ConvertStringTypeToEnum(stat.Type) is StatType.RedCards or StatType.YellowCards);
+
 }

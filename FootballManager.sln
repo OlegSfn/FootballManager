@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UILayer", "UILayer\UILayer.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataLayer", "DataLayer\DataLayer.csproj", "{8BA39A03-2096-4399-B23A-E76A3940A67B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extensions", "Extensions\Extensions.csproj", "{811CF992-C07F-44DA-8C14-B895AEDC0581}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{8BA39A03-2096-4399-B23A-E76A3940A67B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BA39A03-2096-4399-B23A-E76A3940A67B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BA39A03-2096-4399-B23A-E76A3940A67B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{811CF992-C07F-44DA-8C14-B895AEDC0581}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{811CF992-C07F-44DA-8C14-B895AEDC0581}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{811CF992-C07F-44DA-8C14-B895AEDC0581}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{811CF992-C07F-44DA-8C14-B895AEDC0581}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

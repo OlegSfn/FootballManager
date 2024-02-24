@@ -1,11 +1,13 @@
 using System.Text.Json;
 using BusinessLogic;
 using BusinessLogic.EventArgs;
+using BusinessLogic.PlayerData;
 using UILayer.MenuClasses.MenuButtonsClasses;
 using DataLayer;
 using UILayer;
 using UILayer.MenuClasses;
 using UILayer.MenuClasses.MenuButtonGroupsClasses;
+using UILayer.TableClasses;
 
 namespace FootballManager;
 
@@ -25,7 +27,7 @@ public static class RouteManager
         {
             var changeCurrentGameButton = new SwapButton<GameData>("Текущая игра", Storage.GameDatas.ToArray(), swapAction:ChangeCurrentGame);
             var sortPlayersButton = new ActionButton("Отсортировать игроков", SortPlayers);
-            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChosePlayerToChangePlayerData, Storage.CurrentGame);
+            var changePlayerDataButton = new ActionButton<GameData>("Изменить данные об игроке", ChoosePlayerToChangePlayerData, Storage.CurrentGame);
             menuButtons.AddRange(new MenuButton[]{changeCurrentGameButton, sortPlayersButton, changePlayerDataButton});
         }
         
@@ -94,19 +96,25 @@ public static class RouteManager
         var newGameData = new GameData(sortedPlayers.ToList(), $"{Storage.CurrentGame} (сортировка: {sortTypeButton.CurVariant} | {sortModeButton.CurVariant})");
         Storage.GameDatas.Add(newGameData);
         AddNewGame(newGameData);
-        ChosePlayerToChangePlayerData(newGameData);
+        ChoosePlayerToChangePlayerData(newGameData);
     }
 
-    private static void ChosePlayerToChangePlayerData(GameData gameData)
+    private static void ChoosePlayerToChangePlayerData(GameData gameData)
     {
+        var playersTable = new Table(new[]{42, 30, 15, 15, 20}, AlignMode.Center, new[] {AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center, AlignMode.Center});
+        var headerButton = new ActionButton(playersTable.FormatRowItems(new[] {"Id", "Name", "Jersey number", "Position", "Team"}));
+        var choosePlayerHeaderButtonsGroup = new ButtonsGroup{MenuButtons = new MenuButton[]{headerButton}, IsActive = false};
         while (true)
         {
             Player chosenPlayer = null!;
             MenuButton[] playerButtons = gameData.Players.Select(
                     x => 
-                        new ActionButton<Player>($"{x.Id} | {x.Name} | {x.TeamName} | {x.JerseyNumber}", player => chosenPlayer = player, x))
+                        new ActionButton<Player>(playersTable.FormatRowItems(new[]{x.Id, x.Name, x.JerseyNumber.ToString(),
+                            x.Position, x.TeamName}), player => chosenPlayer = player, x))
                 .ToArray();
-            var playersMenu = new Menu("Выберите игрока, данные о котором вы хотите поменять: ", playerButtons);
+            
+            var choosePlayerButtonsGroup = new ButtonsGroup{MenuButtons = playerButtons};
+            var playersMenu = new Menu("Выберите игрока, данные о котором вы хотите поменять:", new[]{choosePlayerHeaderButtonsGroup, choosePlayerButtonsGroup});
 
             if (!playersMenu.HandleUsing())
                 return;
@@ -117,57 +125,23 @@ public static class RouteManager
 
     private static void ChangePlayerData(Player chosenPlayer)
     {
-        ButtonsGroup changePlayerVariableButtonsGroup = new()
-        {
-            MenuButtons = new MenuButton[] {new ActionButton(""){IsActive = false}}, //TODO: check error on empty.
-            IsActive = false
-        };
-        ButtonsGroup changePlayerButtonsGroup = new();
-        void SwitchGroup(bool isBaseGroupActive)
-        {
-            changePlayerVariableButtonsGroup.IsActive = !isBaseGroupActive;
-            changePlayerVariableButtonsGroup.IsVisible = !isBaseGroupActive;
-            changePlayerButtonsGroup.IsActive = isBaseGroupActive;
-        }    
-        
-        
-        var changeNameButton = new ActionButton("Имя", () => ChangePlayerName(chosenPlayer));
-        var changePositionButton = new ActionButton("Позиция", () =>
-        {
-            var positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions,
-                confirmAction:(newPosition) =>
-                {
-                    ChangePlayerPosition(chosenPlayer, newPosition);
-                    SwitchGroup(true);
-                });
-            changePlayerVariableButtonsGroup.MenuButtons[0] = positionsButton;
-            SwitchGroup(false);
-        });
-        var changeJerseyNumButton = new ActionButton("Игровой номер", () => ChangePlayerJerseyNumber(chosenPlayer));
-        var changeTeamButton = new ActionButton("Команда", () =>
-        {
-            string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
-            var teamsButton = new SwapButton<string>("Новая команда", teamsNames, 
-                confirmAction:(newTeam) =>
-                {
-                    ChangePlayerTeam(chosenPlayer, newTeam);
-                    SwitchGroup(true);
-                });
-            changePlayerVariableButtonsGroup.MenuButtons[0] = teamsButton;
-            SwitchGroup(false);
-        });
-        var changeStatsButton = new ActionButton("Статистика", () => ChangePlayerStats(chosenPlayer));
-        MenuButton[] changePlayerButtons =
-            { changeNameButton, changePositionButton, changeJerseyNumButton, changeTeamButton, changeStatsButton };
-            
-        changePlayerButtonsGroup.MenuButtons = changePlayerButtons;
-            
+        var lastCursorPosition = 0;
         while (true)
         {
-            var changeFieldMenu = new Menu($"Выберите параметр, который нужно изменить у {chosenPlayer.Name}:",
-                new []{changePlayerButtonsGroup, changePlayerVariableButtonsGroup});
+            var changePlayerMenuGroup = new ButtonsGroup {CursorPosition = lastCursorPosition};
+            var changeNameButton = new ActionButton($"Имя ({chosenPlayer.Name})", () => ChangePlayerName(chosenPlayer));
+            var changePositionButton = new ActionButton($"Позиция ({chosenPlayer.Position})", () => ChangePlayerPosition(chosenPlayer, changePlayerMenuGroup));
+            var changeJerseyNumButton = new ActionButton($"Игровой номер ({chosenPlayer.JerseyNumber})", () => ChangePlayerJerseyNumber(chosenPlayer));
+            var changeTeamButton = new ActionButton($"Команда ({chosenPlayer.TeamName})", () => ChangePlayerTeam(chosenPlayer, changePlayerMenuGroup));
+            var changeStatsButton = new ActionButton("Статистика", () => ChangePlayerStats(chosenPlayer));
+            MenuButton[] changePlayerButtons =
+                { changeNameButton, changePositionButton, changeJerseyNumButton, changeTeamButton, changeStatsButton };
+            changePlayerMenuGroup.MenuButtons = changePlayerButtons;
+            
+            var changeFieldMenu = new Menu($"Выберите параметр, который нужно изменить у {chosenPlayer.Name}:", new []{changePlayerMenuGroup});
             if (!changeFieldMenu.HandleUsing())
                 break;
+            lastCursorPosition = changePlayerMenuGroup.CursorPosition;
         }
     }
 
@@ -180,20 +154,54 @@ public static class RouteManager
         playerToChange.Name = newName;
     }
 
-    private static void ChangePlayerPosition(Player playerToChange, string newPosition)
+    private static void ChangePlayerPosition(Player playerToChange, ButtonsGroup playerDataButtonsGroup)
     {
-        playerToChange.Position = newPosition;
+        playerDataButtonsGroup.IsActive = false;
+        var positionsButton = new SwapButton<string>("Новая позиция", Storage.CurrentGame.Positions);
+        var playerPositionButtonsGroup = new ButtonsGroup { MenuButtons = new MenuButton[]{ positionsButton} };
+        var changePlayerPositionMenu = new Menu($"Выберите параметр, который нужно изменить у {playerToChange.Name}:", new [] { playerDataButtonsGroup, playerPositionButtonsGroup });
+        if (!changePlayerPositionMenu.HandleUsing())
+        {
+            playerDataButtonsGroup.IsActive = true;
+            return;
+        }
+        
+        playerToChange.Position = positionsButton.CurVariant;
+        playerDataButtonsGroup.IsActive = true;
     }
     
     private static void ChangePlayerJerseyNumber(Player playerToChange)
     {
-        Console.Write("Введите новый номер: ");
-        if(InputHandler.GetIntValue("Введите целое число для номера: ", "Введите новое целое число для номера: ", out int newJerseyNumber))
+        while (true)
+        {
+            Console.Write("Введите новый номер: ");
+            if (!InputHandler.GetIntValue("Введите целое число для номера: ", "Введите новое целое число для номера: ",
+                    out int newJerseyNumber)) continue;
+            
+            if (newJerseyNumber >= 0)
+            {
+                Printer.PrintError("Число должно быть неотрицательным.");
+                continue;
+            }
             playerToChange.JerseyNumber = newJerseyNumber;
+            return;
+        }
     }
 
-    private static void ChangePlayerTeam(Player playerToChange, string newTeamName)
+    private static void ChangePlayerTeam(Player playerToChange, ButtonsGroup playerDataButtonsGroup)
     {
+        playerDataButtonsGroup.IsActive = false;
+        string[] teamsNames = Storage.CurrentGame.Teams.Select(x => x.Name).Append("Создать новую команду").ToArray();
+        var teamsButton = new SwapButton<string>("Новая команда", teamsNames); 
+        var playerTeamButtonsGroup = new ButtonsGroup { MenuButtons = new MenuButton[]{ teamsButton} };
+        var changePlayerTeamMenu = new Menu($"Выберите параметр, который нужно изменить у {playerToChange.Name}:",new[] { playerDataButtonsGroup, playerTeamButtonsGroup });
+        if (!changePlayerTeamMenu.HandleUsing())
+        {
+            playerDataButtonsGroup.IsActive = true;
+            return;
+        }
+
+        var newTeamName = teamsButton.CurVariant;
         if (newTeamName == "Создать новую команду")
         {
             Console.Write("Введите название для новой команды: ");
@@ -210,6 +218,7 @@ public static class RouteManager
         playerToChange.Team = newTeam;
         playerToChange.TeamName = newTeamName;
         playerToChange.AttachObserver(newTeam.PlayerChangedHandler);
+        playerDataButtonsGroup.IsActive = true;
     }
 
     private static void ChangePlayerStats(Player playerToChange)
@@ -231,25 +240,36 @@ public static class RouteManager
             switch (statsButton.CurVariant)
             {
                 case "Удалить статистику":
+                    if (playerToChange.Stats.Count == 0)
+                    {
+                        Printer.PrintError("У игрока нет статистики.");
+                        InputHandler.WaitForUserInput("Нажмите любую клавишу для продолжения: "); //TODO: mb change? 
+                        break;
+                    }
+                        
                     playerStatsGroup.IsActive = true;
                     playerChangeStatsGroup.IsActive = false;
                     playerStatsMenu.HandleUsing();
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
+                    playerChangeStatsGroup.IsActive = true;
                     break;
                 case "Добавить красную карточку":
                     playerToChange.Stats.Add(new Stat("Red Cards"));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
                     break;
                 case "Добавить жёлтую карточку":
                     playerToChange.Stats.Add(new Stat("Yellow Cards"));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
                     break;
                 case "Добавить гол":
                     playerToChange.Stats.Add(new Stat("Goals"));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
                     break;
                 case "Добавить голевую передачу":
                     playerToChange.Stats.Add(new Stat("Assists"));
+                    playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
                     break;
             }
-        
-            playerToChange.OnPlayerUpdated(new PlayerUpdatedEventArgs(DateTime.Now));
         }
     }
     

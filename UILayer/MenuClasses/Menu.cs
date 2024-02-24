@@ -1,3 +1,4 @@
+using Extensions;
 using UILayer.MenuClasses.MenuButtonGroupsClasses;
 using UILayer.MenuClasses.MenuButtonsClasses;
 
@@ -9,6 +10,8 @@ public class Menu
     private int _groupIndex;
     private ButtonsGroup SelectedGroup => _groups[_groupIndex];
     private string _header;
+    private AlignMode _headerAlign = AlignMode.Center;
+    private AlignMode _buttonsAlign = AlignMode.Center;
     public bool ShowSelected { get; set; } = true;
 
     //TODO: Force user to choose at least one of the radiobutton.
@@ -74,7 +77,7 @@ public class Menu
     {
         Console.Clear();
         if (_header != string.Empty)
-            Console.WriteLine(_header);
+            AlignPrint(_header, _headerAlign);
         
         foreach (var group in _groups)
         {
@@ -86,11 +89,11 @@ public class Menu
                 if (group == SelectedGroup && j == group.CursorPosition && ShowSelected)
                 {
                     Console.BackgroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine(groupButtons[j]);
+                    AlignPrint(groupButtons[j].ToString()!, _headerAlign);
                     Console.ResetColor();
                 }
                 else
-                    Console.WriteLine(groupButtons[j]);
+                    AlignPrint(groupButtons[j].ToString()!, _headerAlign);
             }
         }
     }
@@ -128,5 +131,15 @@ public class Menu
         }
 
         return _groupIndex;
+    }
+
+    private void AlignPrint(string text, AlignMode alignMode)
+    {
+        if (alignMode == AlignMode.Left)
+            Console.WriteLine(text.AlignLeft(Console.WindowWidth));
+        if (alignMode == AlignMode.Right)
+            Console.WriteLine(text.AlignRight(Console.WindowWidth));
+        if (alignMode == AlignMode.Center) 
+            Console.WriteLine(text.AlignCenter(Console.WindowWidth));
     }
 }
